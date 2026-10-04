@@ -413,6 +413,8 @@ export function WorkbenchApp({
             <Link
               key={n.id}
               href={n.href}
+              aria-label={n.label}
+              title={n.label}
               className={`nav-link ${view === n.id ? "active" : ""}`}
               aria-current={view === n.id ? "page" : undefined}
             >

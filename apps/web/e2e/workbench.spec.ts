@@ -221,6 +221,9 @@ test("rejects cross-origin writes and remains usable on a phone", async ({
   await expect(
     page.getByRole("heading", { name: "Dataset", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Schemas & source", exact: true }),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
