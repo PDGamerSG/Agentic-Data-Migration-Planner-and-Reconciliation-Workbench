@@ -18,7 +18,8 @@
     "@manifest/agent": "workspace:*",
     "@manifest/db": "workspace:*",
     "lucide-react": "^0.468",
-    "zod": "^4.1"
+    "zod": "^4.1",
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
     "@types/react": "^19",
