@@ -4,3 +4,8 @@ packages/db/src/generated
 .local-postgres
 PLAN.md
 
+
+**/playwright-report/**
+**/test-results/**
+**/.turbo/**
+**/*.tsbuildinfo

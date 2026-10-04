@@ -56,6 +56,9 @@ importers:
       '@manifest/fixtures':
         specifier: workspace:*
         version: link:../../packages/fixtures
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.4.2
       lucide-react:
         specifier: ^0.468
         version: 0.468.0(react@19.3.0)
