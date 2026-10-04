@@ -1,9 +1,5 @@
 {
   "extends": "../typescript-config/base.json",
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "src/generated"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/generated"]
 }
