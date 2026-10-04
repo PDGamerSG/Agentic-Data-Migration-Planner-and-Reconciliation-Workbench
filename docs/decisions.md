@@ -12,8 +12,8 @@
 | Re-send on retry                       | Database uniqueness, rather than a remembered checkpoint, prevents duplicate insertion.                                   |
 | Refuse rollback on content drift       | Avoid deleting edits made after migration.                                                                                |
 | Signed shared access code              | Appropriate bounded demo access; operator names remain labels rather than authenticated user identities.                  |
-| Hand-written CSS and Lucide            | A basic functional interface with tables and forms, ready for later design improvements.                                  |
+| Declaration layout, CSS and Lucide     | Numbered fields, lifecycle stamps and per-record evidence make the migration's state visible.                             |
 
-Changes from the original design: source records and run evidence are JSON snapshots rather than normalized per-record tables; rollback blocks on content drift; the UI includes a structured mapping editor and an optional JSON editor; the ingestion scope is the committed fixture. Audit writes are mandatory for critical lifecycle changes. There is no automatic destructive reset, no uploader, no dark-mode toggle and no production connector.
+Changes from the original design: source records and run evidence are JSON snapshots rather than normalized per-record tables; rollback blocks on content drift; the UI includes a structured mapping editor and an optional JSON editor; the ingestion scope is the committed fixture. Audit writes are mandatory for critical lifecycle changes. The redesigned interface adds persistent light/dark themes and an interactive record map. There is no automatic destructive reset, uploader or production connector. [DESIGN.md](../DESIGN.md) documents the interface and its verification.
 
 The Groq network path is verified with a live key, including a validated proposal, and with injected responses covering invalid calls and bounded rate-limit retries. End-to-end checks use the deterministic offline provider. Neon is prepared; Vercel application deployment awaits the user's environment configuration.

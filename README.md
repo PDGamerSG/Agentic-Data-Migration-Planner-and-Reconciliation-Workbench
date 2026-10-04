@@ -4,6 +4,8 @@
 
 The workbench preserves rejection evidence, proves that retries do not duplicate rows, reconciles the destination, and can roll back only the rows it owns.
 
+The interface uses numbered declaration fields, a record map and a routing slip to show the next migration step. Light and dark themes persist across navigation. [DESIGN.md](DESIGN.md) describes the interface, accessibility choices and verification.
+
 ![Manifest workbench](docs/overview.png)
 
 ## Run locally
