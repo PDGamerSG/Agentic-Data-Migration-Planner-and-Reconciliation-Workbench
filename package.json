@@ -1,0 +1,36 @@
+{
+  "name": "agentic-data-migration-planner-and-reconciliation-workbench",
+  "private": true,
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm db:generate && turbo run build",
+    "test": "vitest run --exclude \"**/*.integration.test.ts\"",
+    "test:integration": "vitest run packages/db/src/workbench.integration.test.ts",
+    "typecheck": "pnpm db:generate && turbo run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @manifest/db db:generate",
+    "db:deploy": "pnpm --filter @manifest/db db:deploy",
+    "db:seed": "pnpm --filter @manifest/db db:seed",
+    "db:local": "tsx scripts/local-postgres.ts",
+    "e2e": "pnpm --filter web e2e"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22",
+    "eslint": "^9.39.1",
+    "typescript-eslint": "^8",
+    "prettier": "^3.6.2",
+    "turbo": "^2.6",
+    "typescript": "~5.9.3",
+    "vitest": "^4",
+    "tsx": "^4.20",
+    "dotenv": "^17.2.3",
+    "embedded-postgres": "18.4.0-beta.17"
+  }
+}

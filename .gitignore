@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.turbo/
+.env
+.env.*
+!.env.example
+.vercel/
+.local-postgres/
+coverage/
+playwright-report/
+test-results/
+packages/db/src/generated/
+*.tsbuildinfo
+.DS_Store
+

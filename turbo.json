@@ -1,0 +1,28 @@
+{
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**"
+      ],
+      "env": [
+        "DATABASE_URL",
+        "DIRECT_URL",
+        "APP_ACCESS_CODE",
+        "SESSION_SECRET",
+        "GROQ_API_KEY",
+        "GROQ_MODEL",
+        "ALLOW_FAULT_INJECTION"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": [
+        "^typecheck"
+      ],
+      "outputs": []
+    }
+  }
+}
