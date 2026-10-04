@@ -1,0 +1,19 @@
+# Implementation decisions
+
+| Decision                               | Reason                                                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| One Next.js app                        | UI and validated server services deploy together on Vercel.                                                               |
+| PostgreSQL / Neon                      | Staging, plans, evidence and mock target have durable transactional persistence.                                          |
+| Prisma workbench models + SQL target   | Typed application storage with explicit destination constraints and lineage operations.                                   |
+| JSON snapshots for source and evidence | The 1,000-record cap makes full immutable snapshots practical and keeps the proof attached to the exact run.              |
+| Transaction-scoped advisory locks      | Compatible with pooled Neon connections; no reliance on session-pinned locks.                                             |
+| Code-defined mandatory risks           | A model cannot suppress approval conditions.                                                                              |
+| Offline planner                        | A keyless demo exercises the real tools and complete lifecycle. It is clearly labeled and makes no model-reasoning claim. |
+| Re-send on retry                       | Database uniqueness, rather than a remembered checkpoint, prevents duplicate insertion.                                   |
+| Refuse rollback on content drift       | Avoid deleting edits made after migration.                                                                                |
+| Signed shared access code              | Appropriate bounded demo access; operator names remain labels rather than authenticated user identities.                  |
+| Hand-written CSS and Lucide            | A basic functional interface with tables and forms, ready for later design improvements.                                  |
+
+Changes from the original design: source records and run evidence are JSON snapshots rather than normalized per-record tables; rollback blocks on content drift; the UI includes a structured mapping editor and an optional JSON editor; the ingestion scope is the committed fixture. Audit writes are mandatory for critical lifecycle changes. There is no automatic destructive reset, no uploader, no dark-mode toggle and no production connector.
+
+The Groq network path is implemented and tested with injected responses. End-to-end checks use the deterministic offline provider; a live Groq call requires a key. Cloud deployment has not been performed without the user's credentials.
