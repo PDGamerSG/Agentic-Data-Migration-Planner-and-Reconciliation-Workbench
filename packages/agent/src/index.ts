@@ -124,7 +124,7 @@ const riskSchema = z.object({
   estimatedRecords: z.number().int().nonnegative().nullable(),
 });
 const questionSchema = z.object({
-  id: z.string(),
+  id: z.enum(questionDefinitions.map((q) => q.id)),
   question: z.string().max(300),
   why: z.string().max(300),
   blocking: z.boolean(),
@@ -298,9 +298,6 @@ export function createTools(
                 ...q,
                 options: [...q.options],
               })),
-              ...p.questions.filter(
-                (q) => !questionDefinitions.some((f) => f.id === q.id),
-              ),
             ];
             proposal = {
               ...p,

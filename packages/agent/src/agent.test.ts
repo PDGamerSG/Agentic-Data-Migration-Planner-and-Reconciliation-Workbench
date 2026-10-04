@@ -91,6 +91,31 @@ describe("restricted planner", () => {
       }),
     ).rejects.toThrow("429");
   });
+  it("rejects questions that the bounded answer workflow cannot accept", async () => {
+    const offline = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      onCall: async () => {},
+    });
+    const { measured: _measured, ...proposal } = offline;
+    const tools = createTools(sampleRecords, async () => {});
+    const result = await tools.call("submit_proposal", {
+      ...proposal,
+      questions: [
+        {
+          id: "unsupported_choice",
+          question: "Choose?",
+          why: "Unknown policy",
+          blocking: true,
+          options: ["yes"],
+        },
+      ],
+    });
+    expect(result).toHaveProperty("error");
+    expect(tools.proposal).toBeUndefined();
+    await tools.call("submit_proposal", proposal);
+    expect(tools.proposal!.questions).toHaveLength(7);
+  });
 });
 
 describe("model tool loop", () => {
