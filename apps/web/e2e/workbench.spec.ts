@@ -102,6 +102,13 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   await expect(
     page.getByRole("heading", { name: "Quarantine manifest" }),
   ).toBeVisible();
+  const heldRecord = page.locator(".record-grid button.held").first();
+  await heldRecord.focus();
+  await heldRecord.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Field errors" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog" }).click();
   await page
     .getByRole("button", { name: "Inspect", exact: true })
     .first()
@@ -144,10 +151,7 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Retry migration safely" }).click();
   await expect(
-    page
-      .locator(".execution-summary > div")
-      .filter({ hasText: "ALREADY LOADED" })
-      .locator("strong"),
+    page.getByTestId("skipped-existing").locator("strong"),
   ).toHaveText("150");
   await page
     .getByRole("link", { name: "Target & reconciliation", exact: true })
@@ -159,6 +163,16 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   );
   expect(latest.skippedExisting).toBe(150);
   expect(state.target.length).toBe(20 + latest.counts.accepted);
+  await page.goto(`/runs/${latest.id}`);
+  await expect(page.locator(".record-grid .cell.landed")).toHaveCount(
+    latest.counts.accepted,
+  );
+  await expect(page.locator(".record-grid .cell.held")).toHaveCount(
+    latest.counts.rejected,
+  );
+  await page
+    .getByRole("link", { name: "Target & reconciliation", exact: true })
+    .click();
   await page.getByRole("button", { name: "Roll back migration" }).click();
   await page
     .getByRole("textbox", { name: "Reason for rollback" })
@@ -176,6 +190,29 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     page.getByText("execution retry started", { exact: true }).first(),
   ).toBeVisible();
   expect(errors).toEqual([]);
+});
+test("persists theme choice across reloads and navigation", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Switch to dark theme" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(
+    page.getByRole("heading", { name: "Dataset", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "test-results/dark-overview.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("link", { name: "Schemas & source", exact: true })
+    .click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "Switch to light theme" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 test("edits create a new draft with a separate approval requirement", async ({
   page,
@@ -211,6 +248,7 @@ test("rejects cross-origin writes and remains usable on a phone", async ({
   });
   expect(response.status()).toBe(403);
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "light" });
   await page.goto("/");
   await expect(
     page.getByRole("textbox", { name: "Operator name" }),
