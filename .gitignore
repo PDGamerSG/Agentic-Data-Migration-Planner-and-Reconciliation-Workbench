@@ -13,3 +13,5 @@ packages/db/src/generated/
 *.tsbuildinfo
 .DS_Store
 
+.impeccable/questions/
+**/.impeccable/review/
