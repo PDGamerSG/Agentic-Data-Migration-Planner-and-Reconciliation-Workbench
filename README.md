@@ -103,6 +103,6 @@ Browser tests run a production server on port 3100. They create real plans, appr
 
 ## Deploy
 
-[Neon and Vercel setup](docs/backend-setup.md) covers environment variables, migrations, the access code and the deployment order. No cloud credentials are committed. Deployment awaits account credentials.
+[Neon and Vercel setup](docs/backend-setup.md) covers environment variables, migrations, the access code and the deployment order. No cloud credentials are committed. The Neon database is prepared; Vercel deployment awaits environment configuration.
 
 Read [architecture](docs/architecture.md), [implementation decisions](docs/decisions.md), and [the demo script](docs/demo-script.md) for the invariants and verification walkthrough. [PLAN.md](PLAN.md) contains the original design; the README and implementation notes describe the shipped scope and any changes from that plan.

@@ -58,4 +58,4 @@ The Vercel Git integration deploys application changes. Production database migr
 - Confirm all five count checks match and rollback leaves the 20 pre-existing rows.
 - Confirm an unauthenticated API request is rejected and an approved version cannot be edited in place.
 
-There is no live deployment URL yet. Account credentials will be supplied separately.
+The Neon database has been prepared and verified. There is no live application URL yet; configure the Vercel project and its environment variables to deploy.
