@@ -119,6 +119,76 @@ describe("restricted planner", () => {
 });
 
 describe("model tool loop", () => {
+  it("retries a transient token limit and still validates the proposal", async () => {
+    const offline = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      onCall: async () => {},
+    });
+    const { measured: _measured, ...proposal } = offline;
+    let requests = 0;
+    const result = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      apiKey: "test",
+      onCall: async () => {},
+      fetcher: async () => {
+        if (++requests === 1)
+          return new Response("", {
+            status: 429,
+            headers: { "retry-after": "0" },
+          });
+        return Response.json({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: "proposal",
+                    type: "function",
+                    function: {
+                      name: "submit_proposal",
+                      arguments: JSON.stringify(proposal),
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    });
+    expect(requests).toBe(2);
+    expect(result.spec).toEqual(proposal.spec);
+    expect(result.measured.email!.total).toBe(250);
+  });
+  it.each([
+    { retryAfter: "0", requests: 3 },
+    { retryAfter: "60", requests: 1 },
+  ])(
+    "bounds retry count and the deadline ($retryAfter seconds)",
+    async ({ retryAfter, requests }) => {
+      let attempts = 0;
+      await expect(
+        runAgent({
+          records: [],
+          answers: {},
+          apiKey: "test",
+          onCall: async () => {},
+          fetcher: async () => {
+            attempts++;
+            return new Response("", {
+              status: 429,
+              headers: { "retry-after": retryAfter },
+            });
+          },
+        }),
+      ).rejects.toThrow("rate limit reached");
+      expect(attempts).toBe(requests);
+    },
+  );
   it("repairs invalid proposals and rejects unauthorized model calls", async () => {
     const offline = await runAgent({
       records: sampleRecords,
@@ -145,7 +215,15 @@ describe("model tool loop", () => {
       },
       fetcher: async (_url, init) => {
         const sent = JSON.parse(String(init?.body));
-        expect(sent.tools).toHaveLength(8);
+        expect(
+          sent.tools.map(
+            (tool: { function: { name: string } }) => tool.function.name,
+          ),
+        ).toEqual(["submit_proposal"]);
+        expect(
+          JSON.parse(sent.messages[1].content).inspection.profiles.signup_dt
+            .total,
+        ).toBe(250);
         const attempt = attempts[index++]!;
         return Response.json({
           choices: [
@@ -169,7 +247,8 @@ describe("model tool loop", () => {
         });
       },
     });
-    expect(calls.map((c) => c.rejected)).toEqual([true, true, false]);
+    expect(calls.slice(-3).map((c) => c.rejected)).toEqual([true, true, false]);
+    expect(calls.slice(0, -3).every((c) => !c.rejected)).toBe(true);
     expect(result.spec).toEqual(valid.spec);
     expect(result.measured.email!.total).toBe(250);
   });

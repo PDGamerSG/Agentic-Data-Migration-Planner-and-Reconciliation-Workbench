@@ -37,6 +37,8 @@ Retries deliberately offer every accepted row again. They share the original lin
 
 The agent cannot insert, approve or roll back. Its tool registry contains schema reads, bounded samples, profiling, catalog listing, mapping tests, plan checking and proposal submission. Unsupported tools and malformed arguments are rejected and recorded. Model-provided risks cannot remove mandatory code-defined risks or business questions.
 
+The Groq path inspects the dataset once through that registry, then supplies compact inspection results and a validated starting draft to the model. Only proposal submission is exposed during model turns; submission validates the full plan and measures every mapping on the staged records. This avoids resending all eight tool schemas on each turn. Token-limit responses honor `Retry-After` for up to two retries within the shared 48-second inspection and model budget; longer waits fail with an actionable message.
+
 ## Reconciliation and rollback
 
 The destination is read in canonical UTC form, including when PostgreSQL's session timezone is not UTC. Reconciliation checks source accounting, quarantine count, lineage row count, total target count and integer credit cents. It also compares key sets and recomputes row content hashes.

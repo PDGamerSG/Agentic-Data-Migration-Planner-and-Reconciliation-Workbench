@@ -16,4 +16,4 @@
 
 Changes from the original design: source records and run evidence are JSON snapshots rather than normalized per-record tables; rollback blocks on content drift; the UI includes a structured mapping editor and an optional JSON editor; the ingestion scope is the committed fixture. Audit writes are mandatory for critical lifecycle changes. There is no automatic destructive reset, no uploader, no dark-mode toggle and no production connector.
 
-The Groq network path is implemented and tested with injected responses. End-to-end checks use the deterministic offline provider; a live Groq call requires a key. Cloud deployment has not been performed without the user's credentials.
+The Groq network path is verified with a live key, including a validated proposal, and with injected responses covering invalid calls and bounded rate-limit retries. End-to-end checks use the deterministic offline provider. Neon is prepared; Vercel application deployment awaits the user's environment configuration.

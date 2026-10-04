@@ -39,7 +39,7 @@ Seed operations are idempotent and never reset an existing workspace. They creat
 ## Walk through the migration
 
 1. Inspect both schemas and profile source fields.
-2. Draft a plan. Without `GROQ_API_KEY`, the offline deterministic planner performs the same read-only tool calls as the model-backed path.
+2. Draft a plan. Without `GROQ_API_KEY`, the offline deterministic planner uses the same audited tool registry as the model-backed path.
 3. Answer the seven business questions and re-draft. Each save creates a new immutable version.
 4. Enter your operator name and run a dry run. Inspect quarantine errors and transformation traces.
 5. Review the high risks and sign the exact plan version and dry-run fingerprint.

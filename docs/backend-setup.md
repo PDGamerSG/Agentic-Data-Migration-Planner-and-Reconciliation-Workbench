@@ -42,7 +42,7 @@ Import `PDGamerSG/Agentic-Data-Migration-Planner-and-Reconciliation-Workbench` i
 
 Vercel deployments refuse access if `APP_ACCESS_CODE` is missing. Signed session cookies are HttpOnly and SameSite=Strict. The authentication endpoint also validates the request origin.
 
-Deploy after database preparation. Open the deployed URL, enter the access code, and complete the demo flow. API actions run in Node.js with a 60-second route budget. Agent network requests have a 48-second budget; a killed execution can be safely retried after its two-minute reservation expires.
+Deploy after database preparation. Open the deployed URL, enter the access code, and complete the demo flow. API actions run in Node.js with a 60-second route budget. Agent inspections and model requests share a 48-second budget; a killed execution can be safely retried after its two-minute reservation expires.
 
 ## GitHub database workflow
 
