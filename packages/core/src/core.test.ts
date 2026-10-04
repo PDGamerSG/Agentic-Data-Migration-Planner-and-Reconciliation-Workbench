@@ -205,3 +205,43 @@ describe("deterministic dry run", () => {
     expect(reconcile(r, [], 20, 20, true).status).toBe("matched");
   });
 });
+
+describe("transformed uniqueness and dictionary determinism", () => {
+  it("rejects case-folded dictionary collisions", () => {
+    const spec = structuredClone(referencePlan);
+    spec.mappings.find((m) => m.targetField === "status")!.steps = [
+      {
+        op: "map_values",
+        mapping: { A: "active", a: "inactive" },
+        caseInsensitive: true,
+        fallback: "reject",
+      },
+    ];
+    expect(
+      checkPlan(spec, sourceSchema, targetSchema).map((i) => i.code),
+    ).toContain("AMBIGUOUS_DICTIONARY");
+  });
+  it("quarantines transformed legacy identifiers that collapse to one value", () => {
+    const spec = structuredClone(referencePlan);
+    spec.mappings
+      .find((m) => m.targetField === "legacy_id")!
+      .steps.push({
+        op: "map_values",
+        mapping: { "C-000001": "shared", "C-000002": "shared" },
+        caseInsensitive: false,
+        fallback: "keep",
+      });
+    const result = runPlan({ ...input, spec });
+    expect(result.outcomes[0]!.status).toBe("accepted");
+    expect(result.outcomes[1]!.status).toBe("rejected");
+    expect(result.fieldErrors).toContainEqual(
+      expect.objectContaining({
+        rowIndex: 1,
+        targetField: "legacy_id",
+        code: "DUPLICATE_IN_SOURCE",
+      }),
+    );
+  });
+  it("rejects object prototype names as countries", () =>
+    expect(() => applyStep({ op: "country_to_iso2" }, "__proto__")).toThrow());
+});

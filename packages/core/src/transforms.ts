@@ -268,7 +268,10 @@ export function applyStep(
       );
     }
     case "country_to_iso2": {
-      const country = COUNTRIES[value.trim().toLowerCase()];
+      const alias = value.trim().toLowerCase();
+      const country = Object.hasOwn(COUNTRIES, alias)
+        ? COUNTRIES[alias]
+        : undefined;
       if (!country)
         throw new TransformError("UNKNOWN_VALUE", "Unsupported country alias");
       return country;

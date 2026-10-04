@@ -67,6 +67,15 @@ export function checkPlan(
       );
     for (const [index, step] of mapping.steps.entries()) {
       const signature = CATALOG[step.op]!;
+      if (step.op === "map_values" && step.caseInsensitive) {
+        const keys = Object.keys(step.mapping).map((k) => k.toLowerCase());
+        if (new Set(keys).size !== keys.length)
+          error(
+            "AMBIGUOUS_DICTIONARY",
+            field.name,
+            "Case-insensitive dictionary contains repeated normalized keys",
+          );
+      }
       if (step.op === "constant" && (index !== 0 || mapping.sources.length > 0))
         error(
           "INVALID_CONSTANT",

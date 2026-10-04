@@ -108,6 +108,7 @@ export function runPlan(input: {
   const fieldErrors: FieldError[] = [];
   const seenKeys = new Set<string>();
   const seenEmails = new Set<string>();
+  const seenLegacyIds = new Set<string>();
   const existingEmails = new Set(existing.emails.map((e) => e.toLowerCase()));
   const existingIds = new Set(existing.legacyIds);
   const duplicateEmails = new Set<string>();
@@ -310,6 +311,14 @@ export function runPlan(input: {
     const email = String(row.email ?? "");
     const id = String(row.legacy_id ?? "");
     if (!errors.length) {
+      if (seenLegacyIds.has(id))
+        add(
+          "legacy_id",
+          "dedupe",
+          "DUPLICATE_IN_SOURCE",
+          "Repeated transformed legacy identifier",
+          id,
+        );
       if (seenEmails.has(email) || duplicateEmails.has(email))
         add(
           "email",
@@ -334,6 +343,7 @@ export function runPlan(input: {
     } else {
       counts.accepted++;
       seenEmails.add(email);
+      seenLegacyIds.add(id);
     }
     fieldErrors.push(...errors);
     outcomes.push({
