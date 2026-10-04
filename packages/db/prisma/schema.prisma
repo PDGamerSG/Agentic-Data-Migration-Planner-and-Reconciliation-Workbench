@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Dataset {
+  id          String   @id
+  name        String
+  records     Json
+  datasetHash String
+  recordCount Int
+  createdAt   DateTime @default(now())
+}
+
+model PlanVersion {
+  id             String     @id
+  version        Int        @unique
+  parentId       String?
+  authorName     String
+  changeSummary  String
+  spec           Json
+  specHash       String
+  issues         Json
+  proposal       Json
+  answers        Json
+  agentSessionId String?
+  createdAt      DateTime   @default(now())
+  approvals      Approval[]
+  runs           Run[]
+}
+
+model Approval {
+  id                String      @id
+  planVersionId     String      @unique
+  dryRunId          String      @unique
+  specHash          String
+  approvedBy        String
+  acknowledgedRisks Json
+  comment           String
+  createdAt         DateTime    @default(now())
+  planVersion       PlanVersion @relation(fields: [planVersionId], references: [id])
+}
+
+model Run {
+  id               String      @id
+  kind             String
+  planVersionId    String
+  specHash         String
+  datasetHash      String
+  targetKeysHash   String
+  lineageId        String
+  attempt          Int         @default(1)
+  retryOfId        String?
+  idempotencyKey   String?
+  status           String
+  result           Json
+  baselineCount    Int
+  insertedCount    Int         @default(0)
+  skippedExisting  Int         @default(0)
+  batchesCommitted Int         @default(0)
+  error            String?
+  startedBy        String
+  startedAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  finishedAt       DateTime?
+  planVersion      PlanVersion @relation(fields: [planVersionId], references: [id])
+
+  @@index([lineageId])
+  @@index([planVersionId, kind])
+}
+
+model AgentSession {
+  id         String          @id
+  provider   String
+  model      String
+  status     String
+  answers    Json
+  proposal   Json?
+  error      String?
+  createdAt  DateTime        @default(now())
+  finishedAt DateTime?
+  calls      AgentToolCall[]
+}
+
+model AgentToolCall {
+  id         String       @id
+  sessionId  String
+  seq        Int
+  tool       String
+  args       Json
+  result     Json
+  rejected   Boolean
+  durationMs Int
+  session    AgentSession @relation(fields: [sessionId], references: [id])
+
+  @@unique([sessionId, seq])
+}
+
+model Reconciliation {
+  id        String   @id
+  lineageId String
+  report    Json
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model Rollback {
+  id          String   @id
+  lineageId   String
+  requestedBy String
+  reason      String
+  rowsDeleted Int
+  driftedRows Int
+  createdAt   DateTime @default(now())
+}
+
+model AuditEvent {
+  id        Int      @id @default(autoincrement())
+  type      String
+  actor     String
+  entityId  String?
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([entityId])
+}

@@ -1,0 +1,231 @@
+import { config } from "dotenv";
+import { beforeAll, afterAll, describe, expect, it } from "vitest";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient, Prisma } from "./generated/prisma/client";
+import { Workbench } from "./workbench";
+import { questionDefinitions, riskDefinitions } from "@manifest/agent";
+config({ path: ".env", quiet: true });
+const url = process.env.TEST_DATABASE_URL;
+const db = url
+  ? new PrismaClient({
+      adapter: new PrismaPg({ connectionString: url, max: 5 }),
+    })
+  : null;
+const wb = db ? new Workbench(db) : null;
+const decisions = Object.fromEntries(
+  questionDefinitions.map((q) => [q.id, q.options[0]]),
+);
+const high = riskDefinitions
+  .filter((r) => r.severity === "high")
+  .map((r) => r.id);
+describe.skipIf(!db)("Postgres migration lifecycle", () => {
+  beforeAll(async () => {
+    await wb!.seed();
+    // Recover earlier interrupted verification through the application's own rollback.
+    const active = await db!.run.findMany({
+      where: { kind: "execution", status: { not: "rolled_back" } },
+    });
+    for (const lineage of new Set(active.map((r) => r.lineageId)))
+      await wb!.rollback(
+        lineage,
+        "Test operator",
+        "Recover interrupted integration test",
+      );
+  });
+  afterAll(async () => {
+    await db!.$disconnect();
+  });
+  it("enforces approval and immutable plan history", async () => {
+    const s = await wb!.createSession({});
+    await wb!.processSession(s.id);
+    const p = (await wb!.state()).plans[0]!;
+    const dry = await wb!.dryRun(p.id, "Pallab");
+    await expect(wb!.execute(p.id, "Pallab")).rejects.toMatchObject({
+      code: "NOT_APPROVED",
+    });
+    await expect(
+      wb!.approve({
+        planId: p.id,
+        dryRunId: dry.id,
+        specHash: p.specHash,
+        approvedBy: "Pallab",
+        acknowledgedRisks: high,
+      }),
+    ).rejects.toMatchObject({ code: "UNANSWERED_QUESTIONS" });
+    await expect(
+      db!.$executeRaw(
+        Prisma.sql`UPDATE "PlanVersion" SET "changeSummary"='tampered' WHERE id=${p.id}`,
+      ),
+    ).rejects.toThrow("append-only");
+    await expect(
+      db!.$executeRaw`UPDATE "AuditEvent" SET actor='tampered'`,
+    ).rejects.toThrow("append-only");
+    await expect(db!.$executeRaw`TRUNCATE "AuditEvent"`).rejects.toThrow(
+      "append-only",
+    );
+  });
+  it("versions, dry-runs, approves, crashes, retries, reconciles and rolls back without touching existing rows", async () => {
+    const initial = (await wb!.state()).plans[0]!;
+    const s = await wb!.createSession(decisions, initial.id);
+    await wb!.processSession(s.id, initial.id);
+    const p = (await wb!.state()).plans[0]!;
+    expect(p.parentId).toBe(initial.id);
+    expect(p.version).toBeGreaterThan(initial.version);
+    const dry = await wb!.dryRun(p.id, "Pallab");
+    const repeated = await wb!.dryRun(p.id, "Pallab");
+    expect(repeated.result).toEqual(dry.result);
+    await expect(
+      wb!.approve({
+        planId: p.id,
+        dryRunId: dry.id,
+        specHash: "wrong",
+        approvedBy: "Pallab",
+        acknowledgedRisks: high,
+      }),
+    ).rejects.toMatchObject({ code: "STALE_PLAN" });
+    await expect(
+      wb!.approve({
+        planId: p.id,
+        dryRunId: dry.id,
+        specHash: p.specHash,
+        approvedBy: "Pallab",
+        acknowledgedRisks: [],
+      }),
+    ).rejects.toMatchObject({ code: "UNACKNOWLEDGED_RISKS" });
+    await wb!.approve({
+      planId: p.id,
+      dryRunId: dry.id,
+      specHash: p.specHash,
+      approvedBy: "Pallab",
+      acknowledgedRisks: high,
+    });
+    process.env.ALLOW_FAULT_INJECTION = "true";
+    const crashed = await wb!.execute(p.id, "Pallab", 3);
+    expect(crashed.run.status).toBe("failed");
+    expect(crashed.run.insertedCount).toBe(150);
+    const retry = await wb!.execute(p.id, "Pallab");
+    expect(retry.run.status).toBe("succeeded");
+    expect(retry.run.lineageId).toBe(crashed.run.lineageId);
+    expect(retry.run.skippedExisting).toBe(150);
+    expect(retry.run.insertedCount + retry.run.skippedExisting).toBe(
+      dry.result.counts.accepted,
+    );
+    const noop = await wb!.execute(p.id, "Pallab");
+    expect(noop.noop).toBe(true);
+    const report = await wb!.reconcile(retry.run.lineageId, "Pallab");
+    expect(report.status).toBe("matched");
+    const duplicates = await db!.$queryRaw<
+      { count: bigint }[]
+    >`SELECT count(*) FROM (SELECT legacy_id FROM target.customers WHERE legacy_id IS NOT NULL GROUP BY legacy_id HAVING count(*)>1) d`;
+    expect(Number(duplicates[0]!.count)).toBe(0);
+    const rollback = await wb!.rollback(
+      retry.run.lineageId,
+      "Pallab",
+      "Lifecycle verification",
+    );
+    expect(rollback.rowsDeleted).toBe(dry.result.counts.accepted);
+    expect((await wb!.state()).target).toHaveLength(20);
+    expect((await wb!.reconcile(retry.run.lineageId, "Pallab")).status).toBe(
+      "matched",
+    );
+    expect((await wb!.state()).history.map((e) => e.type)).toEqual(
+      expect.arrayContaining([
+        "plan_approved",
+        "execution_retry_started",
+        "execution_failed",
+        "execution_retry_noop",
+        "rollback_completed",
+      ]),
+    );
+  });
+  it("refuses rollback if migrated content was changed", async () => {
+    const p = (await wb!.state()).plans[0]!;
+    const run = await wb!.execute(p.id, "Pallab");
+    expect(run.run.status).toBe("succeeded");
+    const row = (await wb!.state()).target.find(
+      (r) => r._migration_lineage_id === run.run.lineageId,
+    )!;
+    await db!.$executeRaw(
+      Prisma.sql`UPDATE target.customers SET first_name='Changed' WHERE id=${row.id}`,
+    );
+    expect((await wb!.reconcile(run.run.lineageId, "Pallab")).status).toBe(
+      "mismatch",
+    );
+    await expect(
+      wb!.rollback(run.run.lineageId, "Pallab", "Unsafe rollback"),
+    ).rejects.toMatchObject({ code: "CONTENT_DRIFT" });
+    await db!.$executeRaw(
+      Prisma.sql`UPDATE target.customers SET first_name=${row.first_name} WHERE id=${row.id}`,
+    );
+    await wb!.rollback(
+      run.run.lineageId,
+      "Pallab",
+      "Restored original content",
+    );
+  });
+  it("rejects target drift between approval and execution", async () => {
+    const base = (await wb!.state()).plans[0]!;
+    const p = await wb!.savePlan({
+      parentId: base.id,
+      spec: base.spec,
+      authorName: "Pallab",
+      changeSummary: "Drift test",
+    });
+    const dry = await wb!.dryRun(p.id, "Pallab");
+    await wb!.approve({
+      planId: p.id,
+      dryRunId: dry.id,
+      specHash: p.specHash,
+      approvedBy: "Pallab",
+      acknowledgedRisks: high,
+    });
+    const original = (await wb!.state()).target.find(
+      (r) => r._migration_lineage_id === null,
+    )!;
+    expect(
+      await db!.$executeRaw(
+        Prisma.sql`UPDATE target.customers SET email='changed-for-integration@example.com' WHERE id=${original.id}`,
+      ),
+    ).toBe(1);
+    try {
+      await expect(wb!.execute(p.id, "Pallab")).rejects.toMatchObject({
+        code: "DRIFT_DETECTED",
+      });
+    } finally {
+      await db!.$executeRaw(
+        Prisma.sql`UPDATE target.customers SET email=${original.email} WHERE id=${original.id}`,
+      );
+    }
+  });
+  it("serializes concurrent executions and recovers expired reservations", async () => {
+    const p = (await wb!.state()).plans[0]!;
+    const attempts = await Promise.allSettled([
+      wb!.execute(p.id, "Operator one"),
+      wb!.execute(p.id, "Operator two"),
+    ]);
+    const successful = attempts.filter((a) => a.status === "fulfilled");
+    expect(successful.length).toBeGreaterThan(0);
+    for (const attempt of attempts)
+      if (attempt.status === "rejected")
+        expect(attempt.reason).toMatchObject({ code: "BUSY" });
+    const execution = (await wb!.state()).runs.find(
+      (r) => r.kind === "execution" && r.status === "succeeded",
+    )!;
+    await db!.run.update({
+      where: { id: execution.id },
+      data: { status: "running", updatedAt: new Date(Date.now() - 180000) },
+    });
+    const retry = await wb!.execute(p.id, "Recovery operator");
+    expect(retry.run.status).toBe("succeeded");
+    expect(retry.run.skippedExisting).toBe(retry.run.result.counts.accepted);
+    expect(retry.run.lineageId).toBe(execution.lineageId);
+    expect((await wb!.state()).history.map((e) => e.type)).toContain(
+      "execution_lease_expired",
+    );
+    await wb!.rollback(
+      retry.run.lineageId,
+      "Recovery operator",
+      "Concurrent lifecycle test complete",
+    );
+  });
+});
