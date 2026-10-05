@@ -1,6 +1,31 @@
 import { test, expect } from "@playwright/test";
 import type { WorkbenchState } from "@manifest/db";
 
+test("API responses identify requests across success and validation failures", async ({
+  request,
+}) => {
+  const healthy = await request.get("/api/health");
+  expect(healthy.ok()).toBe(true);
+  const requestId = healthy.headers()["x-request-id"];
+  expect(requestId).toMatch(/^[a-f0-9-]{36}$/);
+  const origin = new URL(healthy.url()).origin;
+  const invalid = await request.post("/api/agent", {
+    headers: { Origin: origin, "Content-Type": "application/json" },
+    data: Buffer.from("{"),
+  });
+  expect(invalid.status()).toBe(400);
+  expect(await invalid.json()).toHaveProperty("error.code", "INVALID_JSON");
+  expect(invalid.headers()["x-request-id"]).toMatch(/^[a-f0-9-]{36}$/);
+  expect(invalid.headers()["x-request-id"]).not.toBe(requestId);
+  const forbidden = await request.post("/api/agent", {
+    headers: { Origin: "https://unrelated.example" },
+    data: {},
+  });
+  expect(forbidden.status()).toBe(403);
+  expect(await forbidden.json()).toHaveProperty("error.code", "INVALID_ORIGIN");
+  expect(forbidden.headers()["x-request-id"]).toMatch(/^[a-f0-9-]{36}$/);
+});
+
 const pages = [
   ["/", "Overview", "Migration overview"],
   ["/tests", "Test library", "Test library"],

@@ -459,6 +459,7 @@ export async function runAgent(input: {
     ];
     const fetcher = input.fetcher ?? fetch;
     let current = keyCursor++ % keys.length;
+    let validateReturnedCalls = false;
     for (let turn = 0; turn < 12 && !tools.proposal; turn++) {
       const request = () =>
         fetcher("https://api.groq.com/openai/v1/chat/completions", {
@@ -473,10 +474,10 @@ export async function runAgent(input: {
             tools: tools.specs.filter(
               (tool) => tool.function.name === "submit_proposal",
             ),
-            tool_choice: {
-              type: "function",
-              function: { name: "submit_proposal" },
-            },
+            tool_choice: validateReturnedCalls
+              ? "required"
+              : { type: "function", function: { name: "submit_proposal" } },
+            ...(validateReturnedCalls ? { disable_tool_validation: true } : {}),
             temperature: 0,
             reasoning_effort: "low",
             max_completion_tokens: 3000,
@@ -511,6 +512,42 @@ export async function runAgent(input: {
         tried = 1;
         response = await request();
       }
+      if (response.status === 400) {
+        const rejected = (await response.json().catch(() => null)) as {
+          error?: { code?: unknown };
+        } | null;
+        // Groq can reject generated tool syntax before our validator sees it.
+        // Permit one provider-validation handoff; every returned call is still
+        // checked locally, and only submit_proposal is available to the model.
+        if (
+          rejected?.error?.code === "tool_use_failed" &&
+          !validateReturnedCalls
+        ) {
+          validateReturnedCalls = true;
+          console.warn(
+            JSON.stringify({
+              event: "agent_provider_validation_retry",
+              provider: "groq",
+              status: 400,
+              code: "tool_use_failed",
+            }),
+          );
+          messages.push({
+            role: "user",
+            content:
+              "The provider rejected the tool generation. Call only submit_proposal using JSON arguments matching its schema; the application will validate your proposal and return specific corrections.",
+          });
+          continue;
+        }
+        const code =
+          typeof rejected?.error?.code === "string" &&
+          /^[a-z_]{1,50}$/.test(rejected.error.code)
+            ? ` (${rejected.error.code})`
+            : "";
+        throw new Error(
+          `Groq returned HTTP 400${code}. The planning request was rejected; try a new test or check the configured model.`,
+        );
+      }
       if (!response.ok)
         throw new Error(
           `Groq returned HTTP ${response.status}${response.status === 429 ? `: rate limit reached${keys.length > 1 ? ` on all ${keys.length} keys` : ""}. Wait and try again, or check the account's token allowance.` : ""}`,
@@ -536,7 +573,21 @@ export async function runAgent(input: {
         } catch {
           args = { invalidJson: call.function.arguments.slice(0, 1000) };
         }
-        const result = await tools.call(call.function.name, args);
+        let result: unknown;
+        if (call.function.name === "submit_proposal") {
+          result = await tools.call(call.function.name, args);
+        } else {
+          result = {
+            error: "Only submit_proposal is available during model turns.",
+          };
+          await input.onCall({
+            tool: call.function.name,
+            args,
+            result,
+            rejected: true,
+            durationMs: 0,
+          });
+        }
         messages.push({
           role: "tool",
           tool_call_id: call.id,

@@ -119,6 +119,92 @@ describe("restricted planner", () => {
 });
 
 describe("model tool loop", () => {
+  it("recovers provider tool-generation rejection without accepting hidden tools", async () => {
+    const offline = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      onCall: async () => {},
+    });
+    const { measured: _measured, ...valid } = offline;
+    let requests = 0;
+    const rejected: string[] = [];
+    const result = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      apiKey: "test-key",
+      onCall: async (call) => {
+        if (call.rejected) rejected.push(call.tool);
+      },
+      fetcher: async (_url, init) => {
+        const sent = JSON.parse(String(init?.body));
+        if (++requests === 1)
+          return Response.json(
+            {
+              error: {
+                code: "tool_use_failed",
+                failed_generation: "untrusted generation",
+              },
+            },
+            { status: 400 },
+          );
+        expect(sent.tool_choice).toBe("required");
+        expect(sent.disable_tool_validation).toBe(true);
+        expect(JSON.stringify(sent.messages)).not.toContain(
+          "untrusted generation",
+        );
+        const attempt =
+          requests === 2
+            ? {
+                name: "sample_source_records",
+                arguments: { offset: 0, limit: 1 },
+              }
+            : { name: "submit_proposal", arguments: valid };
+        return Response.json({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: `call-${requests}`,
+                    type: "function",
+                    function: {
+                      name: attempt.name,
+                      arguments: JSON.stringify(attempt.arguments),
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    });
+    expect(requests).toBe(3);
+    expect(rejected).toEqual(["sample_source_records"]);
+    expect(result.spec).toEqual(valid.spec);
+    expect(result.measured.email!.total).toBe(250);
+  });
+
+  it("bounds provider-validation recovery and preserves other HTTP failures", async () => {
+    for (const code of ["tool_use_failed", "invalid_api_key"]) {
+      let requests = 0;
+      await expect(
+        runAgent({
+          records: [],
+          answers: {},
+          apiKey: "test-key",
+          onCall: async () => {},
+          fetcher: async () => {
+            requests++;
+            return Response.json({ error: { code } }, { status: 400 });
+          },
+        }),
+      ).rejects.toThrow(`HTTP 400 (${code})`);
+      expect(requests).toBe(code === "tool_use_failed" ? 2 : 1);
+    }
+  });
   it("retries a transient token limit and still validates the proposal", async () => {
     const offline = await runAgent({
       records: sampleRecords,

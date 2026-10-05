@@ -71,8 +71,10 @@ function failure(error: unknown) {
       { status: 400 },
     );
   console.error(
-    "Workbench request failed",
-    error instanceof Error ? error.name : "Unknown error",
+    JSON.stringify({
+      event: "workbench_unexpected_error",
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    }),
   );
   return NextResponse.json(
     {
@@ -86,7 +88,40 @@ function failure(error: unknown) {
     { status: 503 },
   );
 }
-export async function GET(
+type Context = { params: Promise<{ path: string[] }> };
+
+async function loggedResponse(
+  request: NextRequest,
+  action: () => Promise<NextResponse>,
+) {
+  const requestId = crypto.randomUUID();
+  const started = performance.now();
+  const response = await action();
+  const error = response.ok ? null : await response.clone().json();
+  const entry = JSON.stringify({
+    event: "workbench_request",
+    requestId,
+    method: request.method,
+    path: request.nextUrl.pathname,
+    status: response.status,
+    durationMs: Math.round(performance.now() - started),
+    ...(error?.error?.code ? { errorCode: error.error.code } : {}),
+  });
+  if (response.status >= 500) console.error(entry);
+  else console.info(entry);
+  response.headers.set("X-Request-Id", requestId);
+  return response;
+}
+
+export function GET(request: NextRequest, context: Context) {
+  return loggedResponse(request, () => get(request, context));
+}
+
+export function POST(request: NextRequest, context: Context) {
+  return loggedResponse(request, () => post(request, context));
+}
+
+async function get(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
@@ -108,7 +143,7 @@ export async function GET(
     return failure(error);
   }
 }
-export async function POST(
+async function post(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
