@@ -5,7 +5,8 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  const prior = await (await page.request.get("/api/state")).json();
+  const stateResponse = await page.request.get("/api/state");
+  const prior = await stateResponse.json();
   const activeLineages = new Set<string>(
     prior.runs
       .filter(
@@ -16,7 +17,7 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   );
   for (const lineageId of activeLineages) {
     const cleanup = await page.request.post("/api/rollback", {
-      headers: { Origin: "http://localhost:3100" },
+      headers: { Origin: new URL(stateResponse.url()).origin },
       data: {
         lineageId,
         requestedBy: "Test operator",
@@ -120,6 +121,12 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     page.getByRole("heading", { name: "Transformation trace" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Close dialog" }).click();
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  const recordStatus = page.getByRole("region", { name: "Record status" });
+  await expect(recordStatus.locator(".record-grid button.held")).toHaveCount(
+    38,
+  );
+  await recordStatus.getByRole("link", { name: "Open dry run" }).click();
   await page.getByRole("link", { name: "Review this plan" }).click();
   await page.getByRole("button", { name: "Review & approve" }).click();
   await expect(

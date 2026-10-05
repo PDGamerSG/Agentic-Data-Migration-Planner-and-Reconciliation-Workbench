@@ -29,7 +29,7 @@ Status is never represented by a tint alone: committed states use solid marks, p
 
 The desktop navigation rail connects all seven sections. An operator field, environment label and theme toggle remain in the header. Page titles explain the current task, while the primary action follows the next unfinished lifecycle stage.
 
-The overview contains five numbered dataset fields, a record map and a routing slip. The routing slip derives staged, proposed, decided, inspected, cleared, landed and reconciled states from plans, runs and approvals. A newer draft is explicitly distinguished from an older signed version. Interrupted execution points the operator toward a safe retry.
+The overview contains five numbered dataset fields, a record-status section and a routing slip. Before inspection, record status explains the next step and links to the current plan or business decisions and the source records. After a successful dry run for the latest plan, it shows persisted counts and an interactive record map. Counts remain visible while details load; a failed detail request provides a recovery link instead of empty cells. The routing slip derives staged, proposed, decided, inspected, cleared, landed and reconciled states from plans, runs and approvals. A newer draft is explicitly distinguished from an older signed version. Interrupted execution points the operator toward a safe retry.
 
 | Screen                  | Main content and action                                                   |
 | ----------------------- | ------------------------------------------------------------------------- |
@@ -48,7 +48,7 @@ The overview contains five numbered dataset fields, a record map and a routing s
 
 Each source record has one cell. Uninspected records have dashed outlines, accepted records are solid, held records are hatched, and records present in the migration-owned target receive a landed mark. Landed state compares the transformed `legacy_id` with the actual target keys, since a transform can change the source identifier.
 
-The readout names the record under the pointer. On run pages, held cells are native buttons that open the same evidence dialog as the quarantine table. Keyboard focus and Enter activate them. Counts and an accessible text summary supplement the visual map.
+The readout names the record under the pointer. On the overview and run pages, held cells are native buttons that open the same evidence dialog as the quarantine table. Keyboard focus and Enter activate them. Counts and an accessible text summary supplement the visual map.
 
 Fingerprints display a short prefix and copy the full hash. Approval exposes the exact plan and dry-run references and requires every high-risk acknowledgment. Rollback requires a reason. These controls use the existing validated API actions.
 

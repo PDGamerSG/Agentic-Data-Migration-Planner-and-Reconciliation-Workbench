@@ -90,6 +90,7 @@ export function WorkbenchApp({
   const [actor, setActor] = useState("");
   const [chosenPlan, setChosenPlan] = useState<string>();
   const [run, setRun] = useState<RunView | null>(null);
+  const [runError, setRunError] = useState("");
   const [modal, setModal] = useState<
     "approve" | "rollback" | "evidence" | null
   >(null);
@@ -133,11 +134,19 @@ export function WorkbenchApp({
   const runId =
     view === "runs" && selectedId
       ? selectedId
-      : (state?.runs.find(
-          (r) => r.planVersionId === plan?.id && r.kind === "dry_run",
-        )?.id ?? state?.runs[0]?.id);
+      : view === "overview"
+        ? state?.runs.find(
+            (r) =>
+              r.planVersionId === plan?.id &&
+              r.kind === "dry_run" &&
+              r.status === "succeeded",
+          )?.id
+        : (state?.runs.find(
+            (r) => r.planVersionId === plan?.id && r.kind === "dry_run",
+          )?.id ?? state?.runs[0]?.id);
 
   useEffect(() => {
+    setRunError("");
     if (!runId) {
       setRun(null);
       return;
@@ -148,7 +157,10 @@ export function WorkbenchApp({
         if (!cancelled) setRun(v);
       })
       .catch((e) => {
-        if (!cancelled) setError(String(e.message));
+        if (!cancelled) {
+          setRunError(String(e.message));
+          setError(String(e.message));
+        }
       });
     return () => {
       cancelled = true;
@@ -240,6 +252,7 @@ export function WorkbenchApp({
       view,
       plan,
       run,
+      runError,
       actor,
       busy,
       runningSession,

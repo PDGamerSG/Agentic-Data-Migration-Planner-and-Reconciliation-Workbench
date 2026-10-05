@@ -10,6 +10,7 @@ export type Workbench = {
   /** The plan version in focus: the selected one on /plans, the approved one on /target, else the latest. */
   plan: Plan | undefined;
   run: RunView | null;
+  runError: string;
   actor: string;
   busy: string;
   runningSession: boolean;

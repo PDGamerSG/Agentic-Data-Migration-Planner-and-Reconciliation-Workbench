@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useWorkbench } from "../context";
 import { nextStage } from "../lifecycle";
 import { RecordMap } from "../record-map";
-import { Box, Mark, Sheet } from "../ui";
+import { Box, Empty, Mark, Sheet } from "../ui";
 
 export function Overview() {
   const wb = useWorkbench();
@@ -13,9 +13,22 @@ export function Overview() {
     (r) => r._migration_lineage_id === null,
   ).length;
   const next = nextStage(stages);
-  const latestDry =
-    run && run.planVersionId === state.plans[0]?.id ? run : null;
-  const counts = latestDry?.result.counts;
+  const latestPlan = state.plans[0];
+  const latestDry = state.runs.find(
+    (r) =>
+      r.planVersionId === latestPlan?.id &&
+      r.kind === "dry_run" &&
+      r.status === "succeeded",
+  );
+  const inspection =
+    latestDry &&
+    run?.id === latestDry.id &&
+    run.planVersionId === latestPlan?.id &&
+    run.kind === "dry_run" &&
+    run.status === "succeeded"
+      ? run
+      : null;
+  const counts = latestDry?.counts;
   return (
     <>
       <Sheet
@@ -77,49 +90,97 @@ export function Overview() {
 
       <div className="split overview-split">
         <Sheet
-          title="Consignment"
-          id="consignment-heading"
+          title="Record status"
+          id="record-status-heading"
           meta={
             latestDry ? (
               <Link href={`/runs/${latestDry.id}`} className="text-link">
                 Open dry run <ArrowRight size={14} aria-hidden="true" />
               </Link>
             ) : (
-              <span>Not yet inspected</span>
+              <span>Awaiting dry run</span>
             )
           }
         >
-          <div className="sheet-body">
-            {counts && (
-              <p className="tally-line">
-                <span>
-                  <b>{counts.source}</b> source
-                </span>
-                <span aria-hidden="true">→</span>
-                <span>
-                  <b>{counts.transformed}</b> transformed
-                </span>
-                <span aria-hidden="true">→</span>
-                <span className="ok">
-                  <b>{counts.accepted}</b> accepted
-                </span>
-                <span aria-hidden="true">+</span>
-                <span className="held">
-                  <b>{counts.rejected}</b> held
-                </span>
-              </p>
-            )}
-            <RecordMap
-              total={state.dataset.recordCount}
-              recordKeys={state.dataset.records.map((r) =>
-                String(r.payload.cust_id ?? ""),
+          {counts ? (
+            <div className="sheet-body">
+              {counts && (
+                <p className="tally-line">
+                  <span>
+                    <b>{counts.source}</b> source
+                  </span>
+                  <span aria-hidden="true">→</span>
+                  <span>
+                    <b>{counts.transformed}</b> transformed
+                  </span>
+                  <span aria-hidden="true">→</span>
+                  <span className="ok">
+                    <b>{counts.accepted}</b> accepted
+                  </span>
+                  <span aria-hidden="true">+</span>
+                  <span className="held">
+                    <b>{counts.rejected}</b> held
+                  </span>
+                </p>
               )}
-              outcomes={latestDry?.result.outcomes}
-              fieldErrors={latestDry?.result.fieldErrors}
-              landedKeys={wb.landedKeys}
-              sweepKey={latestDry?.result.resultHash}
-            />
-          </div>
+              {inspection ? (
+                <>
+                  <p className="tally-line readout-hint">
+                    Each square is one source record. Select a hatched record to
+                    inspect why it was held.
+                  </p>
+                  <RecordMap
+                    total={counts.source}
+                    recordKeys={state.dataset.records.map((r) =>
+                      String(r.payload.cust_id ?? ""),
+                    )}
+                    outcomes={inspection.result.outcomes}
+                    fieldErrors={inspection.result.fieldErrors}
+                    landedKeys={wb.landedKeys}
+                    sweepKey={inspection.id}
+                    onOpen={wb.openEvidence}
+                  />
+                </>
+              ) : (
+                <p className="readout-hint" role="status">
+                  {wb.runError
+                    ? "Record details could not be loaded. Open the dry run to try again."
+                    : "Loading record details…"}
+                </p>
+              )}
+            </div>
+          ) : (
+            <Empty
+              title={`${state.dataset.recordCount} records waiting for inspection`}
+              description={
+                !latestPlan
+                  ? "Draft a migration plan, then run a dry run to check these records without changing the target."
+                  : wb.openQuestions
+                    ? `Version ${latestPlan.version} needs its own dry run. Answer the open business decisions before inspecting these records.`
+                    : `Version ${latestPlan.version} needs its own dry run. Review the plan and run a check to see which records are accepted or held. The target will not change.`
+              }
+            >
+              <Link
+                href={
+                  !latestPlan || wb.openQuestions
+                    ? "/agent"
+                    : `/plans/${latestPlan.id}`
+                }
+                className="button secondary"
+              >
+                {!latestPlan
+                  ? "Open planning agent"
+                  : wb.openQuestions
+                    ? "Answer decisions"
+                    : "Review plan"}
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+              <Link href="/schemas" className="text-link">
+                Browse source records
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            </Empty>
+          )}
         </Sheet>
 
         <Sheet
