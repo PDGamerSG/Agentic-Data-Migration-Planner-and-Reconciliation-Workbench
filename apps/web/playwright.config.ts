@@ -18,6 +18,7 @@ export default defineConfig({
     env: {
       ALLOW_FAULT_INJECTION: "true",
       GROQ_API_KEY: "",
+      GROQ_API_KEYS: "",
     },
   },
   reporter: [["list"], ["html", { open: "never" }]],

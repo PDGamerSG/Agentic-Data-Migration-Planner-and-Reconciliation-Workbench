@@ -348,19 +348,31 @@ type Message = {
   }[];
   tool_call_id?: string;
 };
+/** Rotates the starting key between sessions so free-tier quotas share the load. */
+let keyCursor = 0;
+
 export async function runAgent(input: {
   records: SourceRecord[];
   answers: Record<string, string>;
   basePlan?: PlanSpec;
   onCall: (call: ToolCallRecord) => Promise<void>;
   apiKey?: string;
+  /** Several Groq keys: a rate-limited or rejected key hands over to the next one. */
+  apiKeys?: string[];
   model?: string;
   fetcher?: typeof fetch;
   signal?: AbortSignal;
 }): Promise<Proposal> {
   const answers = answersSchema.parse(input.answers);
   const tools = createTools(input.records, input.onCall);
-  if (!input.apiKey) {
+  const keys = [
+    ...new Set(
+      [...(input.apiKeys ?? []), input.apiKey ?? ""]
+        .map((k) => k.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (!keys.length) {
     await tools.call("get_source_schema", {});
     await tools.call("get_target_schema", {});
     await tools.call("sample_source_records", { offset: 0, limit: 10 });
@@ -446,12 +458,13 @@ export async function runAgent(input: {
       },
     ];
     const fetcher = input.fetcher ?? fetch;
+    let current = keyCursor++ % keys.length;
     for (let turn = 0; turn < 12 && !tools.proposal; turn++) {
       const request = () =>
         fetcher("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${input.apiKey}`,
+            Authorization: `Bearer ${keys[current]}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -471,7 +484,18 @@ export async function runAgent(input: {
           signal,
         });
       let response = await request();
-      for (let retry = 0; response.status === 429 && retry < 2; retry++) {
+      // Hand over to the next key first; wait out retry-after only once every key is limited.
+      let tried = 1;
+      let waits = 0;
+      while ([401, 403, 429].includes(response.status)) {
+        if (tried < keys.length) {
+          await response.body?.cancel();
+          current = (current + 1) % keys.length;
+          tried++;
+          response = await request();
+          continue;
+        }
+        if (response.status !== 429 || waits >= 2) break;
         const header = response.headers.get("retry-after");
         const seconds = header === null ? NaN : Number(header);
         const waitMs = Math.ceil(seconds * 1000);
@@ -483,11 +507,13 @@ export async function runAgent(input: {
           break;
         await response.body?.cancel();
         await delay(waitMs, undefined, { signal });
+        waits++;
+        tried = 1;
         response = await request();
       }
       if (!response.ok)
         throw new Error(
-          `Groq returned HTTP ${response.status}${response.status === 429 ? ": rate limit reached. Wait and try again, or check the account's token allowance." : ""}`,
+          `Groq returned HTTP ${response.status}${response.status === 429 ? `: rate limit reached${keys.length > 1 ? ` on all ${keys.length} keys` : ""}. Wait and try again, or check the account's token allowance.` : ""}`,
         );
       const body = (await response.json()) as {
         choices?: { message: Message }[];

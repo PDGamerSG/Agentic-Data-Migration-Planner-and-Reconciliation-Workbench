@@ -55,6 +55,11 @@ const requireName = (name: string) => {
   return name.trim();
 };
 const id = () => randomUUID();
+/** GROQ_API_KEY plus any comma-separated GROQ_API_KEYS; sessions spread across them. */
+const groqKeys = () =>
+  [process.env.GROQ_API_KEY, ...(process.env.GROQ_API_KEYS ?? "").split(",")]
+    .map((key) => key?.trim() ?? "")
+    .filter(Boolean);
 const LOCK = 730031;
 export type RunView = Omit<Run, "result"> & { result: RunResult };
 const runView = (run: Run): RunView => ({
@@ -166,7 +171,7 @@ export class Workbench {
       sourceSchema,
       targetSchema,
       maxRecords: 1000,
-      provider: process.env.GROQ_API_KEY ? "groq" : "offline",
+      provider: groqKeys().length ? "groq" : "offline",
       faultInjection: process.env.ALLOW_FAULT_INJECTION === "true",
       plans: plans.map((p) => ({
         ...p,
@@ -289,8 +294,8 @@ export class Workbench {
       const session = await tx.agentSession.create({
         data: {
           id: id(),
-          provider: process.env.GROQ_API_KEY ? "groq" : "offline",
-          model: process.env.GROQ_API_KEY
+          provider: groqKeys().length ? "groq" : "offline",
+          model: groqKeys().length
             ? (process.env.GROQ_MODEL ?? "openai/gpt-oss-120b")
             : "deterministic-v1",
           status: "running",
@@ -339,7 +344,7 @@ export class Workbench {
         answers: session.answers as Record<string, string>,
         basePlan: parent?.spec,
         onCall,
-        apiKey: process.env.GROQ_API_KEY,
+        apiKeys: groqKeys(),
         model: process.env.GROQ_MODEL,
       });
       const plan = await this.savePlan({

@@ -189,6 +189,95 @@ describe("model tool loop", () => {
       expect(attempts).toBe(requests);
     },
   );
+  it("hands a rate-limited key over to the next key without waiting", async () => {
+    const offline = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      onCall: async () => {},
+    });
+    const { measured: _measured, ...proposal } = offline;
+    const used: string[] = [];
+    const result = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      apiKeys: ["key-a", "key-b"],
+      onCall: async () => {},
+      fetcher: async (_url, init) => {
+        const key = new Headers(init?.headers).get("authorization")!;
+        used.push(key);
+        // The first key tried is exhausted for a minute; only rotation finishes in time.
+        if (used.length === 1)
+          return new Response("", {
+            status: 429,
+            headers: { "retry-after": "60" },
+          });
+        return Response.json({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: "proposal",
+                    type: "function",
+                    function: {
+                      name: "submit_proposal",
+                      arguments: JSON.stringify(proposal),
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    });
+    expect(used).toHaveLength(2);
+    expect(new Set(used)).toEqual(new Set(["Bearer key-a", "Bearer key-b"]));
+    expect(result.spec).toEqual(proposal.spec);
+  });
+  it("waits only after every key is limited, then reports all keys", async () => {
+    const used: string[] = [];
+    await expect(
+      runAgent({
+        records: [],
+        answers: {},
+        apiKeys: ["key-a", "key-b"],
+        onCall: async () => {},
+        fetcher: async (_url, init) => {
+          used.push(new Headers(init?.headers).get("authorization")!);
+          return new Response("", {
+            status: 429,
+            headers: { "retry-after": "0" },
+          });
+        },
+      }),
+    ).rejects.toThrow("rate limit reached on all 2 keys");
+    // Two keys per round, one first round plus two bounded waits.
+    expect(used).toHaveLength(6);
+  });
+  it("skips a rejected key and spreads sessions across keys", async () => {
+    const firsts: string[] = [];
+    for (let session = 0; session < 2; session++) {
+      const used: string[] = [];
+      await expect(
+        runAgent({
+          records: [],
+          answers: {},
+          apiKeys: ["key-a", "key-b", "key-a"],
+          onCall: async () => {},
+          fetcher: async (_url, init) => {
+            used.push(new Headers(init?.headers).get("authorization")!);
+            return new Response("", { status: 401 });
+          },
+        }),
+      ).rejects.toThrow("HTTP 401");
+      expect(used).toHaveLength(2);
+      firsts.push(used[0]!);
+    }
+    expect(new Set(firsts).size).toBe(2);
+  });
   it("repairs invalid proposals and rejects unauthorized model calls", async () => {
     const offline = await runAgent({
       records: sampleRecords,

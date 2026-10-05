@@ -7,6 +7,7 @@
         "DATABASE_URL",
         "DIRECT_URL",
         "GROQ_API_KEY",
+        "GROQ_API_KEYS",
         "GROQ_MODEL",
         "ALLOW_FAULT_INJECTION"
       ]

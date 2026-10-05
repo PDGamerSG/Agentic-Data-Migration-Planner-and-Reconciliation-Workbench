@@ -6,13 +6,14 @@ Create one dedicated Neon project and database for this demo. Both the workbench
 
 Store these values in the ignored root `.env` for local operations, and as Vercel environment variables:
 
-| Variable                | Purpose                                                          |
-| ----------------------- | ---------------------------------------------------------------- |
-| `DATABASE_URL`          | Neon pooled PostgreSQL connection string, with SSL required      |
-| `DIRECT_URL`            | Neon direct connection string for migration commands             |
-| `GROQ_API_KEY`          | Optional model-backed planning; omit for the offline planner     |
-| `GROQ_MODEL`            | Optional; defaults to `openai/gpt-oss-120b`                      |
-| `ALLOW_FAULT_INJECTION` | `true` to demonstrate interruption and retry; otherwise disabled |
+| Variable                | Purpose                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `DATABASE_URL`          | Neon pooled PostgreSQL connection string, with SSL required                        |
+| `DIRECT_URL`            | Neon direct connection string for migration commands                               |
+| `GROQ_API_KEY`          | Optional model-backed planning; omit for the offline planner                       |
+| `GROQ_API_KEYS`         | Optional extra Groq keys, comma-separated; rate-limited keys hand over to the next |
+| `GROQ_MODEL`            | Optional; defaults to `openai/gpt-oss-120b`                                        |
+| `ALLOW_FAULT_INJECTION` | `true` to demonstrate interruption and retry; otherwise disabled                   |
 
 Keep these values out of source control and browser-visible environment variables. No `NEXT_PUBLIC_*` secret is needed.
 
