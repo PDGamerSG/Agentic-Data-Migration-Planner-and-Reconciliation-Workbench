@@ -210,6 +210,7 @@ test("persists theme choice across reloads and navigation", async ({
   page,
 }) => {
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   await page.getByRole("button", { name: "Switch to dark theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -224,6 +225,20 @@ test("persists theme choice across reloads and navigation", async ({
   });
   await page.getByRole("link", { name: "Source data", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".ledger-table").first()).toBeVisible();
+  await page.screenshot({ path: "test-results/dark-source-data.png" });
+  await page.getByRole("link", { name: "Plan", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Edit as new version" }),
+  ).toBeVisible();
+  await page.screenshot({ path: "test-results/dark-plan.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: "test-results/dark-mobile-plan.png" });
   await page.getByRole("button", { name: "Switch to light theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });

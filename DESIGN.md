@@ -22,48 +22,58 @@ colors:
   amber-tint: "#fff3c9"
   green: "#17663f"
   green-tint: "#e2f2e8"
-  dark-form: "#71d6bd"
-  dark-form-strong: "#9de8d3"
-  dark-form-tint: "#203830"
-  dark-ground: "#14171b"
-  dark-paper: "#1b1f24"
-  dark-paper-sunk: "#181c21"
-  dark-ink: "#edf0f3"
-  dark-ink-2: "#bdc5cf"
-  dark-muted: "#9ca7b5"
-  dark-rule: "#343b44"
-  dark-rule-soft: "#2a3038"
-  dark-action-ink: "#14171b"
-  dark-violet: "#c4a6f2"
-  dark-violet-tint: "#2a1f42"
-  dark-red: "#ff8f85"
-  dark-red-tint: "#3b1a1d"
-  dark-amber: "#f1cf72"
-  dark-amber-tint: "#352b10"
-  dark-green: "#7fd7a5"
-  dark-green-tint: "#11301f"
+  action-fill: "#087f72"
+  action-hover: "#06685e"
+  clear-fill: "#5b2c93"
+  clear-hover: "#4c247d"
+  record-accepted: "#087f72"
+  dark-form: "#56d6b6"
+  dark-form-strong: "#7ae0c6"
+  dark-form-tint: "#16312e"
+  dark-ground: "#0d1117"
+  dark-paper: "#151c25"
+  dark-paper-sunk: "#101720"
+  dark-ink: "#e6edf5"
+  dark-ink-2: "#b8c5d6"
+  dark-muted: "#95a5b9"
+  dark-rule: "#2d3b4d"
+  dark-rule-soft: "#232f3f"
+  dark-action-ink: "#ffffff"
+  dark-action-fill: "#147d67"
+  dark-action-hover: "#16846d"
+  dark-clear-fill: "#7557b7"
+  dark-clear-hover: "#8364c8"
+  dark-record-accepted: "#328b78"
+  dark-violet: "#c3acf0"
+  dark-violet-tint: "#29233d"
+  dark-red: "#f09a96"
+  dark-red-tint: "#352428"
+  dark-amber: "#e7c17a"
+  dark-amber-tint: "#302b20"
+  dark-green: "#82cda6"
+  dark-green-tint: "#1a3028"
 typography:
   headline:
-    fontFamily: "Archivo, system-ui, sans-serif"
+    fontFamily: "Manrope, system-ui, sans-serif"
     fontSize: "28px"
     fontWeight: 650
     lineHeight: 1.2
     letterSpacing: "-0.03em"
   title:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "14px"
+    fontFamily: "Manrope, system-ui, sans-serif"
+    fontSize: "15px"
     fontWeight: 650
     letterSpacing: "-0.01em"
   body:
-    fontFamily: "Archivo, system-ui, sans-serif"
+    fontFamily: "Manrope, system-ui, sans-serif"
     fontSize: "14px"
-    lineHeight: 1.5
+    lineHeight: 1.6
   label:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "12px"
+    fontFamily: "Manrope, system-ui, sans-serif"
+    fontSize: "13px"
     fontWeight: 600
   evidence:
-    fontFamily: '"Martian Mono", ui-monospace, "SFMono-Regular", monospace'
+    fontFamily: '"JetBrains Mono", ui-monospace, "SFMono-Regular", monospace'
     fontSize: "12px"
 rounded:
   control: "6px"
@@ -79,20 +89,20 @@ spacing:
   desktop-gutter: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.form}"
+    backgroundColor: "{colors.action-fill}"
     textColor: "{colors.action-ink}"
     typography: "{typography.label}"
     rounded: "{rounded.control}"
     padding: "0 14px"
   button-primary-hover:
-    backgroundColor: "{colors.form-strong}"
+    backgroundColor: "{colors.action-hover}"
   button-secondary:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     rounded: "{rounded.control}"
     padding: "0 14px"
   button-clearance:
-    backgroundColor: "{colors.violet}"
+    backgroundColor: "{colors.clear-fill}"
     textColor: "{colors.action-ink}"
     rounded: "{rounded.control}"
     padding: "0 14px"
@@ -127,29 +137,31 @@ components:
 
 **Creative North Star: "The Migration Workspace"**
 
-Manifest uses the familiar control grammar of Linear navigation and Supabase data interfaces. Neutral surfaces, restrained borders and teal actions frame dense evidence. Archivo explains tasks; Martian Mono identifies values an operator compares or traces.
+Manifest uses the familiar control grammar of Linear navigation and Supabase data interfaces. Neutral light surfaces and layered graphite dark surfaces frame dense evidence with restrained borders and emerald actions. Manrope explains tasks; JetBrains Mono identifies values an operator compares or traces.
 
 The bounded workbench keeps one source, one target and at most 1,000 records visible. Plans remain immutable, dry runs persist, and approval binds to the exact plan hash and dry-run evidence. Retry, reconciliation and rollback retain their existing lifecycle behavior. [PRODUCT.md](PRODUCT.md) owns product scope; [the surface brief](apps/web/.impeccable/surfaces/apps-web.md) owns composition. [globals.css](apps/web/app/globals.css) is the implemented token source.
 
 **Key Characteristics:**
 
 - Familiar workspace navigation and native controls.
-- Neutral light and dark surfaces with teal actions.
+- Neutral light and layered graphite dark surfaces with emerald actions.
 - Compact tables and inspectable evidence.
 - Persistent bottom operator controls.
 - Status expressed through text and shape as well as color.
 
 ## Colors
 
-Cool neutral surfaces frame a focused teal accent and separate semantic status colors. Frontmatter records light tokens and their dark counterparts; CSS applies both through the same semantic custom properties.
+Cool neutral surfaces frame teal text accents, emerald action fills and separate semantic status colors. Dark surfaces progress from graphite ground through inset rail and evidence areas to raised paper. Frontmatter records resolved light tokens and their dark counterparts; CSS applies both through the same semantic custom properties, for stored theme choices and OS preference alike.
 
 ### Primary
 
-- **Workspace Teal**: primary actions, selected navigation, links and focus. Strong and tinted variants provide hover and selection. Action ink contrasts with teal in both themes.
+- **Workspace Teal**: selected navigation, links and focus. Strong and tinted variants provide emphasis and selection.
+- **Action Emerald**: primary buttons and the brand symbol. Dark mode uses a deeper fill and white action ink, independent of the brighter text accent.
+- **Record Jade**: accepted record cells use a quieter dark fill, preserving the map's visual density.
 
 ### Secondary
 
-- **Approval Violet**: human clearance and approval.
+- **Approval Violet**: human clearance and approval; button fills are independent of violet status text and tints in dark mode.
 - **Held Red**: held records, errors and destructive actions.
 - **Attention Amber**: drafts, unresolved decisions and hints.
 - **Verified Green**: successful loads and matched totals.
@@ -164,23 +176,27 @@ Cool neutral surfaces frame a focused teal accent and separate semantic status c
 
 **The Evidence State Rule.** Color supports a written state and a distinct mark or pattern; it never carries record status alone.
 
+**The Separate Roles Rule.** Keep action fills, readable text accents and accepted-record fills on their own semantic tokens; a brighter link must not brighten every button or record cell.
+
 ## Typography
 
-**Display and Body Font:** Archivo, with system sans-serif fallbacks.
+**Display and Body Font:** Manrope, with system sans-serif fallbacks.
 
-**Evidence Font:** Martian Mono, with monospace fallbacks.
+**Evidence Font:** JetBrains Mono, with monospace fallbacks.
 
-The hierarchy is compact and operational. Page titles provide the strongest hierarchy; section titles stay close to body size. Fonts are served through next/font. Tabular numerals support comparisons.
+The hierarchy is compact and operational. Page titles provide the strongest hierarchy; section titles stay close to body size. Fonts are served through next/font at their natural width, without stretching or synthetic horizontal scaling. Tabular numerals support comparisons.
 
 ### Hierarchy
 
 - **Headline**: page titles; reduces to (25px) on phones.
 - **Title**: section headings with restrained tracking.
-- **Body**: explanations and data; title descriptions use (13px) and a maximum measure of (68ch).
-- **Label**: compact controls; supporting metadata generally uses (10–12px).
-- **Evidence**: IDs, timestamps, hashes and transform traces; dense preformatted evidence uses (11.5px) with line-height (1.65).
+- **Body**: explanations and data; title descriptions use (14px) and a maximum measure of (68ch).
+- **Label**: compact controls; smaller controls and supporting metadata retain a (12px) minimum.
+- **Evidence**: IDs, timestamps, hashes and transform traces; dense preformatted evidence uses (12px) with line-height (1.65).
 
-**The Two Voices Rule.** Use Archivo to explain an action and Martian Mono to show the evidence behind it.
+**The Two Voices Rule.** Use Manrope to explain an action and JetBrains Mono to show the evidence behind it.
+
+**The Legible Density Rule.** Preserve a minimum (12px) for metadata and evidence; create density through layout and spacing rather than shrinking or stretching text.
 
 ## Layout
 
@@ -211,7 +227,7 @@ Controls use modest corners; sections use broader corners; dialogs use the large
 
 ### Buttons
 
-Compact actions have minimum height (36px). Primary uses teal; secondary uses a neutral surface and rule; approval uses violet; destructive actions use red outlines. Hover shifts the relevant surface or accent; keyboard focus uses a visible teal outline (2px). Disabled controls use inset surfaces and muted text. Pressed buttons move down (1px).
+Compact actions have minimum height (36px). Primary uses the emerald action fill and white action ink; secondary uses a neutral surface and rule; approval uses its dedicated violet fill; destructive actions use red outlines. Hover shifts the relevant fill or surface; keyboard focus uses a visible teal outline (2px). Disabled controls use inset surfaces and muted text. Pressed buttons move down (1px).
 
 ### Chips
 
@@ -235,7 +251,7 @@ Source and target share a bordered section and connecting line with an arrow. A 
 
 ### Record Map and Workflow
 
-Each source record has a cell: dashed before inspection, solid when accepted, hatched when held and separately marked when landed. Held cells are native buttons opening field-level evidence with pointer or keyboard activation. Counts, legend, live readout and accessible text supplement the map. Landed state uses the transformed target key.
+Each source record has a cell: dashed before inspection, solid when accepted, hatched when held and separately marked when landed. Accepted cells use the record fill, a quieter jade in dark mode. Held cells are native buttons opening field-level evidence with pointer or keyboard activation. Counts, legend, live readout and accessible text supplement the map. Landed state uses the transformed target key.
 
 The seven-step workflow derives progress from persisted plans, runs and approvals. Keep the next action beside the page title and distinguish newer drafts from older approved versions. Recent runs link to their kind, version, operator, counts and status evidence.
 
@@ -248,6 +264,8 @@ Short eased state changes support feedback. Record cells enter with a brief stag
 ### Do:
 
 - **Do** use semantic custom properties to align light and dark themes.
+- **Do** separate action fills, text accents and accepted-record fills.
+- **Do** keep metadata and machine evidence at least (12px) and use natural font widths.
 - **Do** pair record states with text and distinguishable shapes or patterns.
 - **Do** show versions, hashes and persisted evidence beside consequential actions.
 - **Do** keep operator controls at the bottom and reserve space above them.

@@ -133,58 +133,127 @@ test("a new draft does not reuse an older plan's inspection", async ({
   }
 });
 
-test("overview shows inspection counts and opens held-record evidence", async ({
-  page,
-  request,
-}) => {
-  const { state, inspection } = await fixture(request);
-  await page.route("**/api/state", (route) => route.fulfill({ json: state }));
-  await page.route("**/api/runs/*", (route) =>
-    route.fulfill({ json: inspection }),
-  );
-  await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
-  await page.goto("/");
-  const status = page.getByRole("region", {
-    name: "Record status",
+for (const theme of ["light", "dark"] as const) {
+  test(`${theme} overview shows inspection counts and opens held-record evidence`, async ({
+    page,
+    request,
+  }) => {
+    const { state, inspection } = await fixture(request);
+    await page.route("**/api/state", (route) => route.fulfill({ json: state }));
+    await page.route("**/api/runs/*", (route) =>
+      route.fulfill({ json: inspection }),
+    );
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    const status = page.getByRole("region", {
+      name: "Record status",
+    });
+    await expect(status.locator(".record-grid .cell")).toHaveCount(250);
+    await expect(status.locator(".record-grid .accepted")).toHaveCount(
+      inspection.result.counts.accepted,
+    );
+    await expect(status.locator(".record-grid button.held")).toHaveCount(
+      inspection.result.counts.rejected,
+    );
+    await expect(status).toContainText("Each square is one record");
+    const held = status.locator(".record-grid button.held").first();
+    await held.focus();
+    await held.press("Enter");
+    await expect(
+      page.getByRole("heading", { name: "Field errors" }),
+    ).toBeVisible();
+    if (theme === "dark") {
+      await page.screenshot({ path: "test-results/dark-record-evidence.png" });
+    }
+    await page.getByRole("button", { name: "Close dialog" }).click();
+    if (theme === "dark") {
+      const contrast = async () =>
+        page.evaluate(() => {
+          const luminance = (color: string) => {
+            const rgb = color
+              .match(/[\d.]+/g)!
+              .slice(0, 3)
+              .map(Number)
+              .map((v) => v / 255)
+              .map((v) =>
+                v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4,
+              );
+            return rgb[0]! * 0.2126 + rgb[1]! * 0.7152 + rgb[2]! * 0.0722;
+          };
+          return [
+            ".title-band p",
+            ".sheet-meta",
+            ".rail-link.active",
+            ".button.primary",
+            ".mark.tone-green",
+          ].map((selector) => {
+            const element = document.querySelector(selector)!;
+            const style = getComputedStyle(element);
+            let surface: Element | null = element;
+            let background = style.backgroundColor;
+            while (
+              surface &&
+              (background === "rgba(0, 0, 0, 0)" ||
+                background === "transparent")
+            ) {
+              surface = surface.parentElement;
+              if (surface)
+                background = getComputedStyle(surface).backgroundColor;
+            }
+            const [hi, lo] = [
+              luminance(style.color),
+              luminance(background),
+            ].sort((a, b) => b - a);
+            return { selector, ratio: (hi! + 0.05) / (lo! + 0.05) };
+          });
+        });
+      for (const { selector, ratio } of await contrast()) {
+        expect(ratio, `${selector} text contrast`).toBeGreaterThanOrEqual(4.5);
+      }
+      await page.locator(".button.primary").hover();
+      // Wait for the authored color transition before measuring the hover state.
+      await page
+        .locator(".button.primary")
+        .evaluate((element) =>
+          Promise.all(
+            element.getAnimations().map((animation) => animation.finished),
+          ),
+        );
+      await expect
+        .poll(
+          async () =>
+            (await contrast()).find(
+              (entry) => entry.selector === ".button.primary",
+            )!.ratio,
+        )
+        .toBeGreaterThanOrEqual(4.5);
+      await page.mouse.move(0, 0);
+    }
+    for (const [name, width, height] of [
+      ["desktop", 1440, 1000],
+      ["mobile", 390, 844],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      await expect
+        .poll(async () =>
+          page.evaluate(() => ({
+            viewport: window.innerWidth,
+            page: document.documentElement.scrollWidth,
+          })),
+        )
+        .toEqual({ viewport: width, page: width });
+      await page.screenshot({
+        path: `test-results/${theme}-${name}-overview-inspected.png`,
+        fullPage: true,
+      });
+      await page.screenshot({
+        path: `test-results/${theme}-${name}-overview-viewport.png`,
+        fullPage: false,
+      });
+    }
   });
-  await expect(status.locator(".record-grid .cell")).toHaveCount(250);
-  await expect(status.locator(".record-grid .accepted")).toHaveCount(
-    inspection.result.counts.accepted,
-  );
-  await expect(status.locator(".record-grid button.held")).toHaveCount(
-    inspection.result.counts.rejected,
-  );
-  await expect(status).toContainText("Each square is one record");
-  const held = status.locator(".record-grid button.held").first();
-  await held.focus();
-  await held.press("Enter");
-  await expect(
-    page.getByRole("heading", { name: "Field errors" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Close dialog" }).click();
-  for (const [name, width, height] of [
-    ["desktop", 1440, 1000],
-    ["mobile", 390, 844],
-  ] as const) {
-    await page.setViewportSize({ width, height });
-    await expect
-      .poll(async () =>
-        page.evaluate(() => ({
-          viewport: window.innerWidth,
-          page: document.documentElement.scrollWidth,
-        })),
-      )
-      .toEqual({ viewport: width, page: width });
-    await page.screenshot({
-      path: `test-results/${name}-overview-inspected.png`,
-      fullPage: true,
-    });
-    await page.screenshot({
-      path: `test-results/${name}-overview-viewport.png`,
-      fullPage: false,
-    });
-  }
-});
+}
 
 test("inspection totals remain visible while record details load", async ({
   page,

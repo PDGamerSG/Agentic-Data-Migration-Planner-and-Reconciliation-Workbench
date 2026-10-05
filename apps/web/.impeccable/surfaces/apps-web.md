@@ -16,7 +16,7 @@ Migration operators inspect evidence and advance a bounded migration; reviewers 
 ## Direction contract
 
 THESIS: A migration workspace with a clear source-to-target path and evidence for every step.
-OWN-WORLD: User-confirmed Linear navigation and Supabase data controls. Neutral sidebar, white or charcoal content surfaces, teal actions, restrained borders, Archivo UI and Martian Mono evidence. Native forms and Lucide icons.
+OWN-WORLD: User-confirmed Linear navigation and Supabase data controls. Neutral sidebar, white or layered graphite content surfaces, emerald action fills independent of brighter teal links and status accents, restrained borders, Manrope UI and JetBrains Mono evidence at natural widths. Metadata and evidence stay at least 12px. Dark approval buttons use dedicated violet fills; accepted records use quieter jade fills. Native forms and Lucide icons.
 STORY: Inspect the source, create a versioned plan, review evidence, approve, load and verify.
 FIRST VIEWPORT: Workspace rail beside a title and next action; source-to-target path above record status and a seven-step workflow. Operator identity, recent runs, new test and theme controls occupy a fixed bottom dock. On phones the name field and theme form the first dock row; runs and new test form the second. History opens above the whole dock and page padding preserves access to the last content.
 FORM: User-pinned Linear + Supabase, confirmed in this conversation; overrides direction roll 1211e87a. The user subsequently requested bottom controls.

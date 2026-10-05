@@ -1,16 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Martian_Mono } from "next/font/google";
+import { Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const sans = Archivo({
+const sans = Manrope({
   subsets: ["latin"],
-  axes: ["wdth"],
   variable: "--font-sans",
   display: "swap",
 });
-const mono = Martian_Mono({
+const mono = JetBrains_Mono({
   subsets: ["latin"],
-  axes: ["wdth"],
   variable: "--font-mono",
   display: "swap",
 });
@@ -24,7 +22,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#14171b" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d1117" },
   ],
 };
 
