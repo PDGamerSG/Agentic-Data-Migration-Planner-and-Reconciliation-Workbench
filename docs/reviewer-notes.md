@@ -19,3 +19,11 @@ For an interruption demonstration, enable the simulator in Load & verify. Retry 
 The demo workspace is shared and operator labels are not authenticated identities. One migration may execute at a time; the planner allows 20 sessions per hour across the workspace. Provider quotas or malformed responses create a failed session with an error, rather than a silently substituted offline result. A second reviewer may see earlier activity.
 
 Do not supply real customer information, database credentials or production secrets. [The full walkthrough](demo-script.md) and [README](../README.md) document scope and local reproduction.
+
+## Verification
+
+On October 6, 2026, local verification passed formatting, lint, typechecking, 44 unit tests, 7 PostgreSQL integration tests, the production build and 21 browser tests. The integration and browser suites used the dedicated local `manifest_test` database with the offline planner, including interruption, retry, reconciliation and rollback. The hosted overview and persisted Groq planning evidence were inspected separately.
+
+## Suggested access remarks
+
+No account or credentials are required. Enter a review label in the bottom operator field and choose **New test**. The demo includes 250 synthetic CRM records, persistent PostgreSQL storage and a Groq-backed planner. Human approval is required before loading data. Retry, reconciliation, rollback and audit history are available. The demo workspace is shared; follow the sample decisions above or inspect the dry-run evidence for your chosen plan.

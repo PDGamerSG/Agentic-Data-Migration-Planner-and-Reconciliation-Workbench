@@ -23,6 +23,8 @@ During the interface refinements, separate Impeccable reviewer and documenter ag
 
 The submission-readiness pass was handled by the main agent. It checked repository documentation, hosting, CI and the model-backed workflow.
 
+The follow-up readiness pass reran the production build and all local checks, including the seven PostgreSQL lifecycle tests and 21 browser tests against the dedicated local test database. It corrected the product document's ambiguous offline-fallback description and prepared a separate sanitized copy of Git history for review. Publishing that copy requires explicit approval because it replaces public commit IDs; the original workspace and public history were not rewritten during preparation.
+
 ## Mistakes, corrections and rejected behavior
 
 - An early implementation plan retained private source material and was mistakenly committed. The current plan was replaced with a product-only implementation roadmap. Removing the current text does not erase older Git commits; historical removal is a separate repository-maintenance operation.
