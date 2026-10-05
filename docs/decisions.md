@@ -12,8 +12,8 @@
 | Re-send on retry                       | Database uniqueness, rather than a remembered checkpoint, prevents duplicate insertion.                                   |
 | Refuse rollback on content drift       | Avoid deleting edits made after migration.                                                                                |
 | Open shared demo, no sign-in           | Lets the team open the demo link directly; operator names remain labels rather than authenticated user identities.        |
-| Declaration layout, CSS and Lucide     | Numbered fields, lifecycle stamps and per-record evidence make the migration's state visible.                             |
+| Workspace layout, CSS and Lucide       | Linear-inspired navigation, Supabase-style tables and per-record evidence make the migration's state visible.             |
 
 Changes from the original design: source records and run evidence are JSON snapshots rather than normalized per-record tables; rollback blocks on content drift; the UI includes a structured mapping editor and an optional JSON editor; the ingestion scope is the committed fixture. Audit writes are mandatory for critical lifecycle changes. The redesigned interface adds persistent light/dark themes and an interactive record map. There is no automatic destructive reset, uploader or production connector. [DESIGN.md](../DESIGN.md) documents the interface and its verification.
 
-The Groq network path is verified with a live key, including a validated proposal, and with injected responses covering invalid calls and bounded rate-limit retries. End-to-end checks use the deterministic offline provider. Neon is prepared; Vercel application deployment awaits the user's environment configuration.
+The Groq network path is verified with a live key, including a validated proposal, and with injected responses covering invalid calls and bounded rate-limit retries. End-to-end checks use the deterministic offline provider. The application is deployed on Vercel at https://agenticmigrator.vercel.app with Neon PostgreSQL; the shared demo requires no sign-in.

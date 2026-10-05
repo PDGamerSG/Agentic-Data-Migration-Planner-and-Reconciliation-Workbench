@@ -39,6 +39,8 @@ The agent cannot insert, approve or roll back. Its tool registry contains schema
 
 The Groq path inspects the dataset once through that registry, then supplies compact inspection results and a validated starting draft to the model. Only proposal submission is exposed during model turns; submission validates the full plan and measures every mapping on the staged records. This avoids resending all eight tool schemas on each turn. Token-limit responses honor `Retry-After` for up to two retries within the shared 48-second inspection and model budget; longer waits fail with an actionable message.
 
+If Groq rejects tool generation with `tool_use_failed`, one retry transfers tool validation to the application using Groq's documented `disable_tool_validation` option. This does not expand the agent's capabilities: the dispatcher rejects every model-returned tool except `submit_proposal`, and the same schema, catalog, full-plan and mapping checks remain mandatory. Repeated provider rejection fails the session. Raw failed-generation content is neither logged nor reinserted into the model prompt.
+
 ## Reconciliation and rollback
 
 The destination is read in canonical UTC form, including when PostgreSQL's session timezone is not UTC. Reconciliation checks source accounting, quarantine count, lineage row count, total target count and integer credit cents. It also compares key sets and recomputes row content hashes.
@@ -50,3 +52,9 @@ Rollback checks actual migrated content and refuses to remove edited records. It
 Audit writes occur inside the same transaction as their lifecycle mutations. Audit UPDATE, DELETE and TRUNCATE are rejected by triggers. This is application-level immutability under the deployed role; a PostgreSQL owner who can drop tables or disable triggers is still an administrator.
 
 The workbench is an open shared demo with no sign-in. Origin checks reject cross-site mutations. Source values and model text are rendered as ordinary React text. No untrusted HTML or arbitrary transform code is evaluated.
+
+## Operational logs
+
+Every application API response carries a generated `X-Request-Id`. The hosting log records one JSON `workbench_request` event with that ID, HTTP method, path, status, duration and an error code for rejected requests. It excludes query strings, request bodies, source values, credentials and provider-generated text. Failed requests keep the same structured API errors and status codes used by the UI.
+
+AI sessions persist provider, model, status, timestamps and failure state. Each inspected tool call records its arguments, bounded result preview, rejection status and duration in PostgreSQL; lifecycle and tool audit events remain transactional. Operational logs help diagnose transport failures, while persisted evidence explains the migration decisions.

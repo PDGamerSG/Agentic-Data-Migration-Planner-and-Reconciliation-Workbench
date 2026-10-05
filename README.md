@@ -4,6 +4,12 @@
 
 The workbench preserves rejection evidence, proves that retries do not duplicate rows, reconciles the destination, and can roll back only the rows it owns.
 
+## Hosted demo and review access
+
+Open [Manifest](https://agenticmigrator.vercel.app). No account or password is required. The deployment uses persistent Neon PostgreSQL and the Groq planner; the interface identifies the planner provider. Enter any review label in the bottom name field, then choose **New test** to start a separate plan history. The bounded CRM fixture is already loaded; no input file or credentials are needed.
+
+The workspace is shared. Other demo activity remains visible, and only one migration can load at a time. [The demo walkthrough](docs/demo-script.md) explains the decisions and the inspect → plan → approve → load → verify → rollback flow. API health checks report process availability; the loaded overview and successful planning session establish database and model availability.
+
 The interface takes inspiration from Linear's workspace navigation and Supabase's data controls. A connected source-to-target path, an inspectable record map and a steps list show the next migration action. Operator controls stay in a bottom bar, and light and dark themes persist across navigation. [DESIGN.md](DESIGN.md) describes the interface and accessibility choices.
 
 To change a screen, start with the [page editing guide](docs/pages.md). Each screen has its own route and UI files under `apps/web/app/(workbench)`.
@@ -79,6 +85,8 @@ Next.js 16, React 19, strict TypeScript, pnpm/Turborepo, Prisma 7 with the Postg
 
 ## Validation
 
+The submission-readiness revision passed formatting, lint, typecheck, build, **44 unit tests**, **7 PostgreSQL integration tests** and **21 browser tests**, including approval, interruption, retry, reconciliation, rollback, mobile layout, dark-theme contrast and request tracking. [GitHub Actions](https://github.com/PDGamerSG/Agentic-Data-Migration-Planner-and-Reconciliation-Workbench/actions) records hosted CI results. Runtime model calls can fail due to provider availability or quotas; browser tests use the offline planner intentionally.
+
 ```sh
 pnpm format:check
 pnpm lint
@@ -107,6 +115,10 @@ Browser tests run a production server on port 3100. They create real plans, appr
 
 ## Deploy
 
-[Neon and Vercel setup](docs/backend-setup.md) covers environment variables, migrations and the deployment order. No cloud credentials are committed. The Neon database is prepared; Vercel deployment awaits environment configuration.
+[Neon and Vercel setup](docs/backend-setup.md) covers environment variables, migrations and the deployment order. The application is deployed at https://agenticmigrator.vercel.app with Neon persistence. Configure a server-only Groq key for a model-backed deployment; the offline planner remains a development/CI fallback. No cloud credentials are committed.
 
-Read [architecture](docs/architecture.md), [implementation decisions](docs/decisions.md), and [the demo script](docs/demo-script.md) for the invariants and verification walkthrough. [PLAN.md](PLAN.md) contains the original design; the README and implementation notes describe the shipped scope and any changes from that plan.
+Read [architecture](docs/architecture.md), [implementation decisions](docs/decisions.md), and [the demo script](docs/demo-script.md) for the invariants and verification walkthrough. [PLAN.md](PLAN.md) records the implementation roadmap and boundaries. [AGENT_USAGE.md](AGENT_USAGE.md) describes development assistance, delegated work, mistakes and verification.
+
+## Limitations
+
+The hosted demo has no authentication or tenant isolation. Operator names are attribution labels. The planner permits 20 sessions per hour across the workspace and has a bounded request budget; provider quota or invalid responses produce a failed session with a retry path. There is no guaranteed uptime SLA, production connector, public upload workflow, arbitrary transform code or distributed worker. Database migrations are an explicit operational step; Git deployment alone does not apply them. Use a dedicated local database for tests rather than the hosted demo.

@@ -10,7 +10,7 @@ web
 
 Two audiences carry equal weight:
 
-- **Assignment reviewers** at Aggroso evaluate an "Expert" take-home brief by clicking through the live deployment for a few minutes. They need to see the whole lifecycle (inspect → agent proposal → human decisions → versioned plan → dry run → approval → execution → interrupted retry → reconciliation → rollback → history) and verify each requirement without reading the code.
+- **Demo reviewers** explore the hosted migration lifecycle: source inspection, agent proposal, human decisions, immutable plan, dry run, approval, execution, retry, reconciliation, rollback and history. They need a short, clear path through the product and evidence they can inspect.
 - **Data engineers or migration operators** are the people the tool pretends to serve. They move one bounded legacy dataset into a strict target, and they need dense, trustworthy evidence: counts, field-level errors, hashes, versions and an audit trail.
 
 ## Product Purpose

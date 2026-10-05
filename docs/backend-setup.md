@@ -10,7 +10,7 @@ Store these values in the ignored root `.env` for local operations, and as Verce
 | ----------------------- | ---------------------------------------------------------------------------------- |
 | `DATABASE_URL`          | Neon pooled PostgreSQL connection string, with SSL required                        |
 | `DIRECT_URL`            | Neon direct connection string for migration commands                               |
-| `GROQ_API_KEY`          | Optional model-backed planning; omit for the offline planner                       |
+| `GROQ_API_KEY`          | Required for a model-backed hosted demo; omit only for offline development/CI      |
 | `GROQ_API_KEYS`         | Optional extra Groq keys, comma-separated; rate-limited keys hand over to the next |
 | `GROQ_MODEL`            | Optional; defaults to `openai/gpt-oss-120b`                                        |
 | `ALLOW_FAULT_INJECTION` | `true` to demonstrate interruption and retry; otherwise disabled                   |
@@ -52,9 +52,9 @@ The Vercel Git integration deploys application changes. Production database migr
 ## Verification
 
 - `/api/health` returns an operational HTTP response; it does not prove database readiness.
-- After signing in, open the overview and verify 250 staged records and 20 baseline target rows on a fresh database.
+- Open the overview without signing in and verify 250 staged records and 20 baseline target rows on a fresh database.
 - Draft, answer, dry-run, approve, execute, retry, reconcile and roll back.
 - Confirm all five count checks match and rollback leaves the 20 pre-existing rows.
-- Confirm an unauthenticated API request is rejected and an approved version cannot be edited in place.
+- Confirm mutations from a different Origin are rejected and an approved version cannot be edited in place. The demo intentionally allows same-origin access without authentication.
 
-The Neon database has been prepared and verified. There is no live application URL yet; configure the Vercel project and its environment variables to deploy.
+The deployed application is available at [agenticmigrator.vercel.app](https://agenticmigrator.vercel.app). Neon provides persistence, Groq is the configured planner, and no test-account credentials are required. Repository-linked Vercel deployments update the application after pushes to main; check the deployment status before sharing the URL.
