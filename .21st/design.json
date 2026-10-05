@@ -25,7 +25,7 @@
     "radius": {},
     "shadows": {},
     "motion": {},
-    "density": "compact document surfaces"
+    "density": "Compact neutral workspace surfaces with dense evidence tables"
   },
   "components": {
     "installed": [],
@@ -39,9 +39,13 @@
       "Lucide icons"
     ],
     "patterns": [
-      "Ruled document sections",
-      "versioned plans",
-      "expandable audit evidence"
+      "Grouped workspace navigation",
+      "Connected source-to-target path",
+      "Immutable plan versions and persisted dry-run evidence",
+      "Accessible record-status map",
+      "Seven-step lifecycle workflow",
+      "Expandable audit evidence",
+      "Persistent bottom operator dock"
     ]
   },
   "constraints": {
@@ -57,7 +61,13 @@
       "Decorative gradients and bitmap illustrations"
     ]
   },
-  "decisions": [],
+  "decisions": [
+    "User-confirmed Linear navigation and Supabase data controls replace the former customs-declaration identity.",
+    "Archivo carries interface copy; Martian Mono carries machine evidence.",
+    "Neutral light and dark surfaces use teal actions and separate semantic status tints.",
+    "Operator identity, recent runs, New test and theme controls live in the bottom dock; mobile uses two rows.",
+    "Flat bordered sections reserve shadows for history menus and dialogs."
+  ],
   "evidence": [
     {
       "fact": "project.instructions",

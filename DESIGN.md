@@ -1,87 +1,261 @@
-# Manifest interface design
+﻿---
+name: Manifest
+description: A bounded migration workspace with evidence for every step.
+colors:
+  form: "#087f72"
+  form-strong: "#06685e"
+  form-tint: "#eaf5f2"
+  ground: "#f7f8fa"
+  paper: "#ffffff"
+  paper-sunk: "#f8f9fb"
+  ink: "#20252c"
+  ink-2: "#4b5563"
+  muted: "#626d7b"
+  rule: "#dfe3e8"
+  rule-soft: "#edf0f3"
+  action-ink: "#ffffff"
+  violet: "#5b2c93"
+  violet-tint: "#f0e9fa"
+  red: "#b3261e"
+  red-tint: "#fde7e5"
+  amber: "#7a5200"
+  amber-tint: "#fff3c9"
+  green: "#17663f"
+  green-tint: "#e2f2e8"
+  dark-form: "#71d6bd"
+  dark-form-strong: "#9de8d3"
+  dark-form-tint: "#203830"
+  dark-ground: "#14171b"
+  dark-paper: "#1b1f24"
+  dark-paper-sunk: "#181c21"
+  dark-ink: "#edf0f3"
+  dark-ink-2: "#bdc5cf"
+  dark-muted: "#9ca7b5"
+  dark-rule: "#343b44"
+  dark-rule-soft: "#2a3038"
+  dark-action-ink: "#14171b"
+  dark-violet: "#c4a6f2"
+  dark-violet-tint: "#2a1f42"
+  dark-red: "#ff8f85"
+  dark-red-tint: "#3b1a1d"
+  dark-amber: "#f1cf72"
+  dark-amber-tint: "#352b10"
+  dark-green: "#7fd7a5"
+  dark-green-tint: "#11301f"
+typography:
+  headline:
+    fontFamily: "Archivo, system-ui, sans-serif"
+    fontSize: "28px"
+    fontWeight: 650
+    lineHeight: 1.2
+    letterSpacing: "-0.03em"
+  title:
+    fontFamily: "Archivo, system-ui, sans-serif"
+    fontSize: "14px"
+    fontWeight: 650
+    letterSpacing: "-0.01em"
+  body:
+    fontFamily: "Archivo, system-ui, sans-serif"
+    fontSize: "14px"
+    lineHeight: 1.5
+  label:
+    fontFamily: "Archivo, system-ui, sans-serif"
+    fontSize: "12px"
+    fontWeight: 600
+  evidence:
+    fontFamily: '"Martian Mono", ui-monospace, "SFMono-Regular", monospace'
+    fontSize: "12px"
+rounded:
+  control: "6px"
+  section: "10px"
+  dialog: "12px"
+  status: "5px"
+  record: "2px"
+spacing:
+  compact: "8px"
+  control: "14px"
+  section: "20px"
+  stack: "24px"
+  desktop-gutter: "32px"
+components:
+  button-primary:
+    backgroundColor: "{colors.form}"
+    textColor: "{colors.action-ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.control}"
+    padding: "0 14px"
+  button-primary-hover:
+    backgroundColor: "{colors.form-strong}"
+  button-secondary:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+    padding: "0 14px"
+  button-clearance:
+    backgroundColor: "{colors.violet}"
+    textColor: "{colors.action-ink}"
+    rounded: "{rounded.control}"
+    padding: "0 14px"
+  button-danger:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.red}"
+    rounded: "{rounded.control}"
+    padding: "0 14px"
+  input:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+    padding: "8px 10px"
+  section:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.section}"
+  status-held:
+    backgroundColor: "{colors.red-tint}"
+    textColor: "{colors.red}"
+    rounded: "{rounded.status}"
+    padding: "3px 7px"
+  navigation-active:
+    backgroundColor: "{colors.form-tint}"
+    textColor: "{colors.form-strong}"
+    padding: "10px 12px"
+---
 
-## Purpose and direction
+# Design System: Manifest
 
-Manifest presents a migration as a declaration that must be inspected and signed before its records move. The interface serves operators reading evidence and reviewers walking the full lifecycle. Numbered fields, ruled sections, typed values and clearance stamps make the plan, its approval and its execution easy to distinguish.
+## Overview
 
-The product remains one source, one target and at most 1,000 staged records. The UI displays persisted state; it cannot bypass the server's approval, retry or rollback rules. [PRODUCT.md](PRODUCT.md) records the audience and scope.
+**Creative North Star: "The Migration Workspace"**
 
-## Visual language
+Manifest uses the familiar control grammar of Linear navigation and Supabase data interfaces. Neutral surfaces, restrained borders and teal actions frame dense evidence. Archivo explains tasks; Martian Mono identifies values an operator compares or traces.
 
-The light theme uses a white document surface with blue rules and labels. The dark theme uses a blue-black surface with pale-blue rules. Draft, held and approved states have separate tints, text labels and mark shapes.
+The bounded workbench keeps one source, one target and at most 1,000 records visible. Plans remain immutable, dry runs persist, and approval binds to the exact plan hash and dry-run evidence. Retry, reconciliation and rollback retain their existing lifecycle behavior. [PRODUCT.md](PRODUCT.md) owns product scope; [the surface brief](apps/web/.impeccable/surfaces/apps-web.md) owns composition. [globals.css](apps/web/app/globals.css) is the implemented token source.
 
-| Role     | Light token | Dark token | Use                                        |
-| -------- | ----------- | ---------- | ------------------------------------------ |
-| Ground   | `#f2f5f9`   | `#0b1322`  | Workspace surrounding the form             |
-| Paper    | `#ffffff`   | `#111c2f`  | Content sections and fields                |
-| Text     | `#0e1a2b`   | `#e5edf8`  | Values and body copy                       |
-| Form ink | `#133d6b`   | `#8db6ec`  | Rules, navigation and printed labels       |
-| Violet   | `#5b2c93`   | `#c4a6f2`  | Human clearance and approval               |
-| Red      | `#b3261e`   | `#ff8f85`  | Quarantine, errors and destructive actions |
-| Amber    | `#7a5200`   | `#f1cf72`  | Drafts and unresolved decisions            |
-| Green    | `#17663f`   | `#7fd7a5`  | Successful loads and matched totals        |
+**Key Characteristics:**
 
-Archivo provides headings and readable prose. Martian Mono provides IDs, timestamps, fingerprints and numerical evidence. Both load through `next/font` and are served with the application. CSS variables in `apps/web/app/globals.css` define the shared palette, type and motion rules.
+- Familiar workspace navigation and native controls.
+- Neutral light and dark surfaces with teal actions.
+- Compact tables and inspectable evidence.
+- Persistent bottom operator controls.
+- Status expressed through text and shape as well as color.
 
-Status is never represented by a tint alone: committed states use solid marks, pending states use dashed marks, held records use hatching, recalled states use a strike, and running states use a ring. Visible text accompanies the marks.
+## Colors
 
-## Layout and workflow
+Cool neutral surfaces frame a focused teal accent and separate semantic status colors. Frontmatter records light tokens and their dark counterparts; CSS applies both through the same semantic custom properties.
 
-The desktop navigation rail connects all eight sections with plain labels and no status marks; progress lives on the overview. The header connects the name field to recent runs and a New test action, alongside the environment label and theme toggle. New tests start with empty answers on the existing bounded demo dataset. Page titles explain the current task in one short sentence. Copy uses everyday words (AI planner, dry run, approve, load, check totals) and says each idea once.
+### Primary
 
-The overview contains four dataset fields, a record-status section and a steps list. The title band carries one primary button for the next unfinished step. Before inspection, record status explains the next step and links to the current plan or open questions and the source records. After a successful dry run for the latest plan, it shows persisted counts and an interactive record map. Counts remain visible while details load; a failed detail request provides a recovery link instead of empty cells. The steps list derives source ready, plan created, questions answered, dry run done, approved, loaded and totals checked from plans, runs and approvals. A newer draft is explicitly distinguished from an older signed version. Interrupted execution points the operator toward a safe retry.
+- **Workspace Teal**: primary actions, selected navigation, links and focus. Strong and tinted variants provide hover and selection. Action ink contrasts with teal in both themes.
 
-| Screen        | Main content and action                                                           |
-| ------------- | --------------------------------------------------------------------------------- |
-| Overview      | Dataset bounds, per-record state and the next step                                |
-| Test library  | Shared and personal tests, grouped versions, operator names and saved run results |
-| Source data   | Source profiles, target constraints and paginated source records                  |
-| AI planner    | Proposal, questions for the operator and expandable tool evidence                 |
-| Plan          | Versions, field mapping, editor, differences, risks and approval                  |
-| Run results   | Counts, deterministic fingerprints, batch progress and held-record proof          |
-| Load & verify | Load, totals check, rollback and the target table                                 |
-| Activity log  | Searchable events with expandable groups for repeated calls and batches           |
+### Secondary
 
-“Held” is the visual label for rejected records. The count definitions remain source, transformed, accepted and rejected; accepted plus rejected equals source. Acceptance alone does not imply that a row has been inserted.
+- **Approval Violet**: human clearance and approval.
+- **Held Red**: held records, errors and destructive actions.
+- **Attention Amber**: drafts, unresolved decisions and hints.
+- **Verified Green**: successful loads and matched totals.
 
-The planner prioritizes business decisions ahead of tool evidence. Each question shows its source and target field, a concrete example, and the effect of each supported answer. Progress distinguishes selected answers from those saved in the focused version. Older question sets have stable `/agent/<plan ID>` links; submitting answers saves a child version without changing the original plan or approval. The library groups those versions under their initial test and filters by authors and run operators. Operator names label shared activity rather than providing account authentication.
+### Neutral
 
-## Record map and evidence
+- **Ground**: background around sections.
+- **Paper**: sections, forms, dialogs and bottom dock.
+- **Inset Surface**: rail, evidence readouts and secondary data areas.
+- **Primary, Secondary and Quiet Ink**: values, supporting content and metadata.
+- **Structural and Soft Rules**: component boundaries and internal separators.
 
-Each source record has one cell. Uninspected records have dashed outlines, accepted records are solid, held records are hatched, and records present in the migration-owned target receive a landed mark. Landed state compares the transformed `legacy_id` with the actual target keys, since a transform can change the source identifier.
+**The Evidence State Rule.** Color supports a written state and a distinct mark or pattern; it never carries record status alone.
 
-The readout names the record under the pointer. On the overview and run pages, held cells are native buttons that open the same evidence dialog as the quarantine table. Keyboard focus and Enter activate them. Counts and an accessible text summary supplement the visual map.
+## Typography
 
-Fingerprints display a short prefix and copy the full hash. Approval exposes the exact plan and dry-run references and requires every high-risk acknowledgment. Rollback requires a reason. These controls use the existing validated API actions.
+**Display and Body Font:** Archivo, with system sans-serif fallbacks.
 
-## Themes, responsive behavior and accessibility
+**Evidence Font:** Martian Mono, with monospace fallbacks.
 
-- With no saved choice, the interface follows the operating system's color preference. Explicit theme choices persist in `manifest-theme`; the initial document applies the saved choice before hydration.
-- At narrower widths the rail becomes horizontal navigation, the overview and other splits stack, and dataset fields reflow. Small-screen mapping rows become labeled blocks; other wide ledgers scroll within their own containers.
-- Controls use native buttons, links, inputs and dialogs, visible focus indicators and descriptive accessible names. The main-content skip link precedes navigation. Errors, progress and record readouts use appropriate alert or live-region semantics.
-- Record inspection uses a short entry sweep; clearance uses a stamp impression. `prefers-reduced-motion` removes staggered delays and reduces animation duration.
+The hierarchy is compact and operational. Page titles provide the strongest hierarchy; section titles stay close to body size. Fonts are served through next/font. Tabular numerals support comparisons.
 
-The accessibility target is WCAG 2.2 AA. Keyboard, responsive and theme checks support that target; they are not a complete accessibility certification.
+### Hierarchy
 
-## Implementation map
+- **Headline**: page titles; reduces to (25px) on phones.
+- **Title**: section headings with restrained tracking.
+- **Body**: explanations and data; title descriptions use (13px) and a maximum measure of (68ch).
+- **Label**: compact controls; supporting metadata generally uses (10–12px).
+- **Evidence**: IDs, timestamps, hashes and transform traces; dense preformatted evidence uses (11.5px) with line-height (1.65).
 
-`app/(workbench)/layout.tsx` keeps the shared `WorkbenchApp` mounted across navigation. It owns data fetching, selected versions, operator identity and API actions. Each screen has its own `page.tsx` route and adjacent `view.tsx` UI; `WorkbenchContext` passes shared controls to those screens without duplicating execution logic. [The page editing guide](docs/pages.md) maps each URL to its files.
+**The Two Voices Rule.** Use Archivo to explain an action and Martian Mono to show the evidence behind it.
 
-| Module                        | Responsibility                                                 |
-| ----------------------------- | -------------------------------------------------------------- |
-| `workbench/lifecycle.ts`      | Derive stage status and the next action from stored state      |
-| `workbench/shell.tsx`         | Navigation rail and persistent theme switch                    |
-| `workbench/ui.tsx`            | Shared declaration fields, sections, marks, hashes and dialogs |
-| `workbench/record-map.tsx`    | Record states, tally, readout and evidence activation          |
-| `workbench/dialogs.tsx`       | Approval, rollback and record evidence                         |
-| `app/(workbench)/**/page.tsx` | Explicit section and detail routes                             |
-| `app/(workbench)/**/view.tsx` | The seven workbench screens                                    |
-| `mapping-editor.tsx`          | Structured editing within the closed transform catalog         |
+## Layout
 
-## Verification and assets
+Desktop uses a fixed neutral rail (224px), grouped into Workspace, Migration and Monitor. The content container is capped at (1,440px), with page gutters (32px), section gaps (24px) and common section body padding (20px). Dense tables scroll within their containers.
 
-The handoff's finish review reported all eight requested adjustments resolved and a ship verdict. The finishing pass also corrected transformed-key matching in the record map and added browser coverage for landed counts, keyboard evidence access and theme persistence.
+At (1,100px), overview records and workflow stack. At (900px), the rail becomes sticky horizontal navigation and content gutters become (18px). At (640px), the brand becomes a compact symbol, endpoints stack vertically, mapping rows become labeled blocks and the dock uses two rows. Smaller data grids reflow at (480px).
 
-Verification includes formatting, lint, TypeScript, unit tests, a production build and the browser migration lifecycle: proposal, decisions, dry run, approval, interrupted execution, retry, reconciliation, rollback and version editing. Browser checks also cover cross-origin rejection and mobile layout.
+The bottom dock persists operator identity, recent runs, New test and theme controls. On phones, the name input and theme occupy the first row, with Your runs and New test beneath. The name field retains “Enter your name.” History opens above the whole dock. Pages reserve bottom padding (100px) on desktop and (140px) on phones.
 
-The interface's marks, patterns and record cells are rendered in CSS, and its icons come from Lucide. There are no generated bitmap illustrations. The shipped overview image is a screenshot of the running application; its capture details are recorded in [docs/overview.provenance.md](docs/overview.provenance.md).
+**The Reachable Evidence Rule.** Fixed controls must leave the last row, action and keyboard focus reachable above the dock.
+
+## Elevation & Depth
+
+Content sections are flat at rest. Thin borders and neutral tonal layers establish structure. Floating history uses the theme-aware shadow; dialogs use a stronger shadow, dimmed backdrop and slight blur.
+
+### Shadow Vocabulary
+
+- **History menu**: the light and dark shadow definitions in the stylesheet.
+- **Dialog**: `0 30px 80px -20px rgb(0 0 0 / 0.45)` for modal decisions and evidence.
+
+**The Floating Layer Rule.** Shadows separate temporary overlays from the workspace; ordinary sections rely on rules and tone.
+
+## Shapes
+
+Controls use modest corners; sections use broader corners; dialogs use the largest shared radius. Status chips and record cells have their own smaller radii in frontmatter. Navigation links use (7px) corners; history uses (9px). Standard boundaries are thin (1px) rules. Solid, dashed, hatched, struck and ring marks distinguish states alongside text.
+
+## Components
+
+### Buttons
+
+Compact actions have minimum height (36px). Primary uses teal; secondary uses a neutral surface and rule; approval uses violet; destructive actions use red outlines. Hover shifts the relevant surface or accent; keyboard focus uses a visible teal outline (2px). Disabled controls use inset surfaces and muted text. Pressed buttons move down (1px).
+
+### Chips
+
+Small sentence-case status labels pair semantic text and tint with a distinct mark. Held states use hatching, pending states use dashed marks and running states use a ring. A chip reports stored state.
+
+### Cards / Containers
+
+Flat bordered sections have divided headers, padded bodies and optional metadata footers. Tables use soft row separators and restrained hover tints. Avoid turning every field or count into a floating card.
+
+### Inputs / Fields
+
+Native inputs, selects and textareas use the control radius and a thin rule. Hover strengthens the border; focus remains visible. Operator identity has a group focus outline and descriptive placeholder. Structured text uses mono; errors include readable text.
+
+### Navigation
+
+Lucide icons accompany plain labels. Selected links use teal tint, stronger teal text and increased weight. Responsive navigation scrolls horizontally and preserves full accessible names and aria-current.
+
+### Connected Migration Path
+
+Source and target share a bordered section and connecting line with an arrow. A neutral source and teal target communicate direction. Bounds and target context sit in an inset facts row. The connection turns vertically when endpoints stack.
+
+### Record Map and Workflow
+
+Each source record has a cell: dashed before inspection, solid when accepted, hatched when held and separately marked when landed. Held cells are native buttons opening field-level evidence with pointer or keyboard activation. Counts, legend, live readout and accessible text supplement the map. Landed state uses the transformed target key.
+
+The seven-step workflow derives progress from persisted plans, runs and approvals. Keep the next action beside the page title and distinguish newer drafts from older approved versions. Recent runs link to their kind, version, operator, counts and status evidence.
+
+### Motion and Accessibility
+
+Short eased state changes support feedback. Record cells enter with a brief stagger; dialogs and notices use restrained entry motion. Reduced motion removes delays and reduces transitions and animations to (1ms). Preserve the skip link, native dialogs, visible focus and descriptive names in both themes.
+
+## Do's and Don'ts
+
+### Do:
+
+- **Do** use semantic custom properties to align light and dark themes.
+- **Do** pair record states with text and distinguishable shapes or patterns.
+- **Do** show versions, hashes and persisted evidence beside consequential actions.
+- **Do** keep operator controls at the bottom and reserve space above them.
+- **Do** preserve native keyboard controls and reduced-motion behavior.
+
+### Don't:
+
+- **Don't** restore the discarded customs-declaration styling or ornamental stamp language.
+- **Don't** imply that accepted records have already landed.
+- **Don't** obscure evidence behind decoration or unsupported claims.
+- **Don't** let the dock cover history, final rows or focused actions.
