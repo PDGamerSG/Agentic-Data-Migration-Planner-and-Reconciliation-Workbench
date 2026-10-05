@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
-import { useWorkbench } from "../context";
-import { Mark, Sheet, time, words } from "../ui";
+import { useWorkbench } from "@/components/workbench/context";
+import { Mark, Sheet, time, words } from "@/components/workbench/ui";
 
 type Event = ReturnType<typeof useWorkbench>["state"]["history"][number];
 type Row =

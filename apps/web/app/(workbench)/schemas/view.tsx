@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { useWorkbench } from "../context";
-import { Pager, Sheet, fmt } from "../ui";
+import { useWorkbench } from "@/components/workbench/context";
+import { Pager, Sheet, fmt } from "@/components/workbench/ui";
 
 export function Schemas() {
   const { state } = useWorkbench();

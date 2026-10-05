@@ -6,6 +6,8 @@ The workbench preserves rejection evidence, proves that retries do not duplicate
 
 The interface uses numbered declaration fields, a record map and a routing slip to show the next migration step. Light and dark themes persist across navigation. [DESIGN.md](DESIGN.md) describes the interface, accessibility choices and verification.
 
+To change a screen, start with the [page editing guide](docs/pages.md). Each screen has its own route and UI files under `apps/web/app/(workbench)`.
+
 ![Manifest workbench](docs/overview.png)
 
 ## Run locally

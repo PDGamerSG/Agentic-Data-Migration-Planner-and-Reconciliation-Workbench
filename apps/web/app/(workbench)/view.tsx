@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useWorkbench } from "../context";
-import { nextStage } from "../lifecycle";
-import { RecordMap } from "../record-map";
-import { Box, Empty, Mark, Sheet } from "../ui";
+import { useWorkbench } from "@/components/workbench/context";
+import { nextStage } from "@/components/workbench/lifecycle";
+import { RecordMap } from "@/components/workbench/record-map";
+import { Box, Empty, Mark, Sheet } from "@/components/workbench/ui";
 
 export function Overview() {
   const wb = useWorkbench();

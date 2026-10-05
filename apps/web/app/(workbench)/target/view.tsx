@@ -1,8 +1,15 @@
 "use client";
 import { useState } from "react";
 import { Check, X } from "lucide-react";
-import { useWorkbench } from "../context";
-import { Empty, Mark, Pager, Sheet, fmt, time } from "../ui";
+import { useWorkbench } from "@/components/workbench/context";
+import {
+  Empty,
+  Mark,
+  Pager,
+  Sheet,
+  fmt,
+  time,
+} from "@/components/workbench/ui";
 
 export function Target() {
   const wb = useWorkbench();

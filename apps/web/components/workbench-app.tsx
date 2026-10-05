@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Loader2, X } from "lucide-react";
 import type { RunView, WorkbenchState } from "@manifest/db";
@@ -19,13 +19,6 @@ import {
   EvidenceDialog,
   RollbackDialog,
 } from "./workbench/dialogs";
-import { Overview } from "./workbench/views/overview";
-import { Schemas } from "./workbench/views/schemas";
-import { Agent } from "./workbench/views/agent";
-import { Plans } from "./workbench/views/plans";
-import { Runs } from "./workbench/views/runs";
-import { Target } from "./workbench/views/target";
-import { History } from "./workbench/views/history";
 
 const titles: Record<string, [string, string]> = {
   overview: [
@@ -75,14 +68,18 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 
-export function WorkbenchApp({
-  view,
-  selectedId,
-}: {
-  view: string;
-  selectedId?: string;
-}) {
+export function WorkbenchApp({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams();
+  // Explicit pages supply their UI; the shared layout only needs the active section and ID.
+  const view = pathname.split("/")[1] || "overview";
+  const selectedId =
+    typeof params.planId === "string"
+      ? params.planId
+      : typeof params.runId === "string"
+        ? params.runId
+        : undefined;
   const [state, setState] = useState<WorkbenchState | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -446,13 +443,7 @@ export function WorkbenchApp({
             </div>
           ) : (
             <WorkbenchContext.Provider value={wb}>
-              {view === "overview" && <Overview />}
-              {view === "schemas" && <Schemas />}
-              {view === "agent" && <Agent />}
-              {view === "plans" && <Plans />}
-              {view === "runs" && <Runs />}
-              {view === "target" && <Target />}
-              {view === "history" && <History />}
+              {children}
               {modal === "approve" && (
                 <ApproveDialog
                   onClose={() => setModal(null)}

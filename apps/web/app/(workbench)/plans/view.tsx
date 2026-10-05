@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import type { PlanSpec } from "@manifest/core";
 import { CATALOG } from "@manifest/core/transforms";
-import { MappingEditor } from "../../mapping-editor";
-import { useWorkbench } from "../context";
-import { Empty, Hash, Mark, Sheet, time } from "../ui";
+import { MappingEditor } from "@/components/mapping-editor";
+import { useWorkbench } from "@/components/workbench/context";
+import { Empty, Hash, Mark, Sheet, time } from "@/components/workbench/ui";
 
 function stepLabel(s: PlanSpec["mappings"][number]["steps"][number]) {
   return `${s.op}${"part" in s ? `:${s.part}` : "value" in s ? `:${String(s.value)}` : ""}`;

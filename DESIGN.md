@@ -63,17 +63,18 @@ The accessibility target is WCAG 2.2 AA. Keyboard, responsive and theme checks s
 
 ## Implementation map
 
-`WorkbenchApp` owns data fetching, selected versions, operator identity and API actions. `WorkbenchContext` passes those controls to the view modules without duplicating execution logic.
+`app/(workbench)/layout.tsx` keeps the shared `WorkbenchApp` mounted across navigation. It owns data fetching, selected versions, operator identity and API actions. Each screen has its own `page.tsx` route and adjacent `view.tsx` UI; `WorkbenchContext` passes shared controls to those screens without duplicating execution logic. [The page editing guide](docs/pages.md) maps each URL to its files.
 
-| Module                     | Responsibility                                                 |
-| -------------------------- | -------------------------------------------------------------- |
-| `workbench/lifecycle.ts`   | Derive stage status and the next action from stored state      |
-| `workbench/shell.tsx`      | Navigation rail and persistent theme switch                    |
-| `workbench/ui.tsx`         | Shared declaration fields, sections, marks, hashes and dialogs |
-| `workbench/record-map.tsx` | Record states, tally, readout and evidence activation          |
-| `workbench/dialogs.tsx`    | Approval, rollback and record evidence                         |
-| `workbench/views/*`        | The seven workbench sections                                   |
-| `mapping-editor.tsx`       | Structured editing within the closed transform catalog         |
+| Module                        | Responsibility                                                 |
+| ----------------------------- | -------------------------------------------------------------- |
+| `workbench/lifecycle.ts`      | Derive stage status and the next action from stored state      |
+| `workbench/shell.tsx`         | Navigation rail and persistent theme switch                    |
+| `workbench/ui.tsx`            | Shared declaration fields, sections, marks, hashes and dialogs |
+| `workbench/record-map.tsx`    | Record states, tally, readout and evidence activation          |
+| `workbench/dialogs.tsx`       | Approval, rollback and record evidence                         |
+| `app/(workbench)/**/page.tsx` | Explicit section and detail routes                             |
+| `app/(workbench)/**/view.tsx` | The seven workbench screens                                    |
+| `mapping-editor.tsx`          | Structured editing within the closed transform catalog         |
 
 ## Verification and assets
 

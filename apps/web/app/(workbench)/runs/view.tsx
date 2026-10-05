@@ -3,9 +3,19 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRight, Search } from "lucide-react";
 import type { FieldError } from "@manifest/core";
-import { useWorkbench } from "../context";
-import { RecordMap } from "../record-map";
-import { Box, Empty, Hash, Mark, Pager, Sheet, fmt, time, words } from "../ui";
+import { useWorkbench } from "@/components/workbench/context";
+import { RecordMap } from "@/components/workbench/record-map";
+import {
+  Box,
+  Empty,
+  Hash,
+  Mark,
+  Pager,
+  Sheet,
+  fmt,
+  time,
+  words,
+} from "@/components/workbench/ui";
 
 export function Runs() {
   const wb = useWorkbench();

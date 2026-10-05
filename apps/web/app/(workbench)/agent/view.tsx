@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import { ArrowRight, Check, Loader2, X } from "lucide-react";
-import { useWorkbench } from "../context";
-import { Box, Empty, Mark, Sheet, words } from "../ui";
+import { useWorkbench } from "@/components/workbench/context";
+import { Box, Empty, Mark, Sheet, words } from "@/components/workbench/ui";
 
 export function Agent() {
   const wb = useWorkbench();
