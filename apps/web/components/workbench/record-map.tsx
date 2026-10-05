@@ -12,10 +12,10 @@ type Cell = {
 };
 
 const LABEL: Record<CellState, string> = {
-  pending: "not inspected",
+  pending: "not tested",
   accepted: "accepted",
-  held: "held in quarantine",
-  landed: "landed in target",
+  held: "held",
+  landed: "loaded into target",
 };
 
 /**
@@ -130,14 +130,14 @@ export function RecordMap({
             </span>
             {focus.reason && <span className="mono">{focus.reason}</span>}
             {focus.state === "held" && onOpen && (
-              <span className="readout-hint">Click to open evidence</span>
+              <span className="readout-hint">Select to see why</span>
             )}
           </>
         ) : (
           <span className="readout-hint">
             {outcomes
-              ? "Point at a record to read it. Hatched records are held; select one to open its evidence."
-              : "Run a dry run to inspect every record."}
+              ? "Each square is one record. Select a striped square to see why it was held."
+              : "Run a dry run to test every record."}
           </span>
         )}
       </div>
@@ -153,12 +153,12 @@ export function RecordMap({
         {landedKeys && (
           <li>
             <span className="cell landed" aria-hidden="true" />
-            Landed <b>{tally.landed}</b>
+            Loaded <b>{tally.landed}</b>
           </li>
         )}
         <li>
           <span className="cell pending" aria-hidden="true" />
-          Not inspected <b>{tally.pending}</b>
+          Not tested <b>{tally.pending}</b>
         </li>
       </ul>
     </div>

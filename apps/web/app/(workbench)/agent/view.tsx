@@ -13,60 +13,47 @@ export function Agent() {
     : 0;
   return (
     <>
-      <div className="form-grid four standalone">
-        <Box n={1} label="Planner">
+      <div className="form-grid three standalone">
+        <Box label="AI model">
           <span className="value-strong">
             {state.provider === "groq"
               ? "Groq · gpt-oss-120b"
               : "Offline planner"}
           </span>
-          <small>
-            {state.provider === "groq"
-              ? "Model-driven proposals, independently re-tested"
-              : "Deterministic demo planner. Add a Groq key for model proposals."}
-          </small>
+          <small>Reads and tests data. Cannot change anything.</small>
         </Box>
-        <Box n={2} label="Capabilities">
-          <span className="value-strong">Read-only tools</span>
-          <small>
-            Inspect, profile and test. It cannot write, approve or load.
-          </small>
-        </Box>
-        <Box n={3} label="Latest session">
+        <Box label="Last run">
           {session ? (
             <Mark status={session.status} />
           ) : (
-            <span className="value-strong">None yet</span>
+            <span className="value-strong">Not started</span>
           )}
           <small>
-            {session
-              ? `${session.calls.length} tool calls logged`
-              : "Start the agent to inspect"}
+            {session ? `${session.calls.length} checks` : "Start it above"}
           </small>
         </Box>
-        <Box n={4} label="Decisions">
+        <Box label="Questions answered">
           <span className="figure">
             {answered}
             <small> / {plan?.proposal.questions.length ?? 0}</small>
           </span>
-          <small>Answered by the operator</small>
         </Box>
       </div>
 
       <div className="split agent-split">
         <Sheet
-          title="Inspection log"
+          title="What the AI checked"
           id="log-heading"
           meta={
             session ? (
-              <span className="mono">{session.calls.length} calls</span>
+              <span className="mono">{session.calls.length} checks</span>
             ) : undefined
           }
         >
           {!session ? (
             <Empty
-              title="A proposal starts with evidence."
-              description="The agent reads both schemas, profiles every field and tests each mapping against the staged records before it proposes anything."
+              title="No AI run yet"
+              description="The AI reads the data and tests each field before it suggests a plan."
             />
           ) : (
             <ol className="tool-log">
@@ -111,7 +98,7 @@ export function Agent() {
               {session.status === "running" && (
                 <li className="tool-running" role="status">
                   <Loader2 size={15} className="spin" aria-hidden="true" />
-                  Inspecting and testing…
+                  Checking the data…
                 </li>
               )}
               {session.error && <li className="tool-error">{session.error}</li>}
@@ -119,15 +106,11 @@ export function Agent() {
           )}
         </Sheet>
 
-        <Sheet
-          title="Business decisions"
-          id="decisions-heading"
-          meta={<span>Operator input</span>}
-        >
+        <Sheet title="Questions for you" id="decisions-heading">
           {!plan ? (
             <Empty
-              title="Questions appear here."
-              description="The agent flags every choice it cannot safely infer from the data, such as ambiguous dates or consent defaults."
+              title="No questions yet"
+              description="The AI asks when the data alone can't decide, such as an unclear date format."
             />
           ) : (
             <div className="decisions">
@@ -165,9 +148,9 @@ export function Agent() {
                   onClick={wb.draft}
                   disabled={!!wb.busy || wb.runningSession}
                 >
-                  Re-draft with answers
+                  Update plan with answers
                 </button>
-                <p>Answers are written into a new immutable plan version.</p>
+                <p>Saves a new plan version.</p>
               </div>
             </div>
           )}
@@ -176,11 +159,11 @@ export function Agent() {
 
       {plan && (
         <Sheet
-          title="Proposed migration"
+          title="Suggested plan"
           id="proposal-heading"
           meta={
             <Link href={`/plans/${plan.id}`} className="text-link">
-              Review v{plan.version}
+              Open version {plan.version}
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
           }
@@ -195,7 +178,7 @@ export function Agent() {
                 <thead>
                   <tr>
                     <th scope="col">Field</th>
-                    <th scope="col">Finding</th>
+                    <th scope="col">Issue</th>
                     <th scope="col">Detail</th>
                   </tr>
                 </thead>

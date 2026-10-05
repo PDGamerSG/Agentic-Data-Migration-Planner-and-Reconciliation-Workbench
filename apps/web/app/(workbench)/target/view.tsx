@@ -25,11 +25,11 @@ export function Target() {
       <section className="destination" aria-labelledby="destination-heading">
         <div>
           <h2 id="destination-heading">
-            {state.target.length} records at the destination
+            {state.target.length} rows in the target table
           </h2>
           <p>
             <span className="mono">target.customers</span> · {preExisting}{" "}
-            pre-existing · {owned} owned by this migration
+            already there · {owned} added by this migration
           </p>
         </div>
         <div className="destination-bar" aria-hidden="true">
@@ -40,14 +40,14 @@ export function Target() {
 
       <div className="split target-split">
         <Sheet
-          title="Reconciliation ledger"
+          title="Totals check"
           id="ledger-heading"
           meta={reconciliation && <Mark status={reconciliation.status} />}
         >
           {!report ? (
             <Empty
-              title="Nothing to reconcile yet."
-              description="After a load, the ledger compares source and target totals, key coverage, row content and the credit-limit control total."
+              title="Not checked yet"
+              description="After loading, compare source and target totals here."
             />
           ) : (
             <>
@@ -100,10 +100,10 @@ export function Target() {
           )}
         </Sheet>
 
-        <Sheet title="Migration controls" id="controls-heading">
+        <Sheet title="Load data" id="controls-heading">
           <div className="controls">
             <label className="field">
-              <span>Plan to execute</span>
+              <span>Plan version</span>
               <select
                 aria-label="Execution plan"
                 value={plan?.id ?? ""}
@@ -119,8 +119,8 @@ export function Target() {
             </label>
             <p className="controls-note">
               {plan?.approval
-                ? `Version ${plan.version} is signed by ${plan.approval.approvedBy}. Accepted records load in batches of 50; a retry skips rows already loaded.`
-                : "Only a signed version can load. Run a dry run and approve the plan first."}
+                ? `Version ${plan.version} is approved by ${plan.approval.approvedBy}.`
+                : "Approve this plan version before loading."}
             </p>
             {state.faultInjection && (
               <label className="check-row compact">
@@ -132,8 +132,7 @@ export function Target() {
                 <span>
                   <strong>Simulate interruption after batch 3</strong>
                   <small>
-                    Stops the load after three committed batches to demonstrate
-                    a safe retry.
+                    Stops the load part way so you can test a safe retry.
                   </small>
                 </span>
               </label>
@@ -144,8 +143,8 @@ export function Target() {
               disabled={!!wb.busy || !wb.actor.trim() || !plan?.approval}
             >
               {execution?.status === "failed"
-                ? "Retry approved migration"
-                : "Execute approved migration"}
+                ? "Retry the load"
+                : "Load approved records"}
             </button>
             {execution && (
               <div className="controls-secondary">
@@ -154,7 +153,7 @@ export function Target() {
                   disabled={!!wb.busy || !wb.actor.trim()}
                   onClick={wb.reconcile}
                 >
-                  Reconcile totals
+                  Check totals
                 </button>
                 <button
                   className="button danger full"
@@ -170,17 +169,16 @@ export function Target() {
               </div>
             )}
             <p className="controls-note small">
-              Rollback removes only rows carrying this migration&apos;s lineage.
-              Pre-existing rows are never touched.
+              Rollback removes only rows this migration added.
             </p>
           </div>
         </Sheet>
       </div>
 
       <Sheet
-        title="Customer registry"
+        title="Target table"
         id="registry-heading"
-        meta={<span>Read-only view of the mock target</span>}
+        meta={<span>Read-only</span>}
       >
         <div className="table-scroll">
           <table className="ledger-table">
@@ -209,6 +207,7 @@ export function Target() {
                       status={
                         r._migration_lineage_id ? "landed" : "pre-existing"
                       }
+                      label={r._migration_lineage_id ? "migrated" : "existing"}
                     />
                   </td>
                   <td className="mono">{fmt(r.legacy_id)}</td>

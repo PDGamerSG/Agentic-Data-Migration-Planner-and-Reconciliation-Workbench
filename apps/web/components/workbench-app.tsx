@@ -23,32 +23,23 @@ import {
 const titles: Record<string, [string, string]> = {
   overview: [
     "Migration overview",
-    "One consignment of customer records, declared, inspected and cleared before it moves.",
+    "Move old CRM customers into the new customer table, one step at a time.",
   ],
   schemas: [
-    "Inspect the source",
-    "Read the legacy export and the registry it must satisfy before anything is mapped.",
+    "Source data",
+    "What the old data looks like and what the new table requires.",
   ],
-  agent: [
-    "Planning agent",
-    "The agent inspects and proposes with read-only tools. You make the business decisions.",
-  ],
+  agent: ["AI planner", "The AI suggests a plan. You answer its questions."],
   plans: [
-    "Review the migration plan",
-    "Explicit mappings, immutable versions, and a signature bound to one fingerprint.",
+    "Plan",
+    "Check the field mapping, test it with a dry run, then approve it.",
   ],
-  runs: [
-    "Runs & quarantine",
-    "Repeatable inspections. Every held record keeps its source values and the failed step.",
-  ],
+  runs: ["Run results", "Which records passed, and why the others were held."],
   target: [
-    "Target & reconciliation",
-    "Verify what landed, prove nothing duplicated, and recall exactly what was loaded.",
+    "Load & verify",
+    "Load approved records, check the totals, or undo the load.",
   ],
-  history: [
-    "Activity log",
-    "Every proposal, signature, run, retry and rollback, in an append-only register.",
-  ],
+  history: ["Activity log", "Every action, who did it and when."],
 };
 
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -237,10 +228,10 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
             r.noop
               ? "Already loaded. This retry made no changes."
               : r.run.status === "failed"
-                ? "Interrupted after committed batches. Retrying is safe: loaded rows are skipped."
+                ? "Load stopped part way. Retry is safe: loaded rows are skipped."
                 : retry
                   ? `Retry complete: ${r.run.insertedCount} inserted, ${r.run.skippedExisting} already loaded.`
-                  : "Migration landed. Reconcile the totals in the target ledger.",
+                  : "Records loaded. Check the totals next.",
           );
         },
       );
@@ -269,11 +260,11 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
       fail: setError,
       draft: () =>
         void act<{ id: string }>(
-          "Drafting proposal",
+          "Starting AI planner",
           "agent",
           { answers, basePlanId: plan?.id },
           () => {
-            setNotice("Planner started. Its inspection log fills in below.");
+            setNotice("AI planner started.");
             router.push("/agent");
           },
         ),
@@ -286,7 +277,7 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
           (r) => {
             setRun(r);
             router.push(`/runs/${r.id}`);
-            setNotice("Dry run complete. The mock target was not changed.");
+            setNotice("Dry run finished. No data was written.");
           },
         ),
       execute: () =>
@@ -295,10 +286,10 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
       reconcile: () =>
         execution &&
         void act(
-          "Reconciling target",
+          "Checking totals",
           "reconcile",
           { lineageId: execution.lineageId, actor },
-          () => setNotice("Reconciliation report updated."),
+          () => setNotice("Totals checked."),
         ),
       savePlan: (spec: PlanSpec, summary: string) =>
         plan &&
@@ -314,7 +305,7 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
           (p) => {
             router.push(`/plans/${p.id}`);
             setNotice(
-              "Saved a new immutable draft. It needs its own dry run and signature.",
+              "Saved as a new version. Run a dry run, then approve it.",
             );
           },
         ),
@@ -335,20 +326,18 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <Rail view={view} stages={stages} planCount={state?.plans.length ?? 0} />
+      <Rail view={view} />
       <div className="desk">
         <header className="topbar">
           <p className="topbar-path">
-            <span className="mono">MIG-0001</span>
-            <span aria-hidden="true">/</span>
             <span>{section.label}</span>
           </p>
           <label className="operator">
-            <span>Operator</span>
+            <span>Your name</span>
             <input
               aria-label="Operator name"
               value={actor}
-              placeholder="Your name signs every action"
+              placeholder="Needed to run or approve"
               onChange={(e) => {
                 setActor(e.target.value);
                 localStorage.setItem("manifest-operator", e.target.value);
@@ -358,10 +347,10 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
           </label>
           <span
             className="environment"
-            title="The destination is a mock target schema in PostgreSQL"
+            title="Data is written to a demo table in PostgreSQL"
           >
             <span className="environment-dot" aria-hidden="true" />
-            Mock target · PostgreSQL
+            Demo database
           </span>
           <ThemeToggle />
         </header>
@@ -411,8 +400,7 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
               view !== "schemas" && (
                 <div className="signal hint">
                   <span>
-                    Enter your name in the Operator box. Dry runs, approvals and
-                    loads are signed with it.
+                    Enter your name at the top to run, approve or load.
                   </span>
                 </div>
               )}
@@ -437,7 +425,7 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
               ) : (
                 <div className="loading-sheet" role="status">
                   <Loader2 className="spin" size={18} aria-hidden="true" />
-                  Opening the declaration…
+                  Loading…
                 </div>
               )}
             </div>
@@ -469,7 +457,6 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
           )}
           <footer className="colophon">
             <span>Manifest · migration workbench</span>
-            <span>One source. One target. Every record accounted for.</span>
           </footer>
         </main>
       </div>
@@ -480,34 +467,31 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
 function TitleActions({ wb }: { wb: Workbench }) {
   const next = nextStage(wb.stages);
   const proposing = next?.id === "proposed";
-  const draftButton = (primary: boolean) => (
+  const draftButton = (
     <button
-      className={`button ${primary ? "primary" : "secondary"}`}
+      className="button primary"
       onClick={wb.draft}
       disabled={!!wb.busy || wb.runningSession}
     >
-      {wb.runningSession
-        ? "Planner running…"
-        : wb.plan
-          ? "Re-draft plan"
-          : "Draft migration plan"}
+      {wb.runningSession ? "AI planner running…" : "Create plan with AI"}
     </button>
   );
+  // One next step per page: the overview points at the first unfinished stage.
   if (wb.view === "overview")
-    return (
+    return next ? (
       <div className="title-actions">
-        <span className="declaration-no mono">MIG-0001</span>
-        {draftButton(proposing)}
-        {next && !proposing && (
+        {proposing ? (
+          draftButton
+        ) : (
           <Link href={next.href} className="button primary">
             {next.action}
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         )}
       </div>
-    );
-  if (wb.view === "agent")
-    return <div className="title-actions">{draftButton(true)}</div>;
+    ) : null;
+  if (wb.view === "agent" && !wb.plan)
+    return <div className="title-actions">{draftButton}</div>;
   if (wb.view === "plans" && wb.plan)
     return (
       <div className="title-actions">

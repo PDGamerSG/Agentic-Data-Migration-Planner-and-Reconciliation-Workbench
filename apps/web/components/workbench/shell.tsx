@@ -12,7 +12,6 @@ import {
   Sun,
   Table2,
 } from "lucide-react";
-import type { Stage } from "./lifecycle";
 
 export const navigation = [
   {
@@ -21,47 +20,41 @@ export const navigation = [
     label: "Overview",
     short: "Overview",
     icon: LayoutGrid,
-    stages: [],
   },
   {
     id: "schemas",
     href: "/schemas",
-    label: "Schemas & source",
+    label: "Source data",
     short: "Source",
     icon: Table2,
-    stages: ["staged"],
   },
   {
     id: "agent",
     href: "/agent",
-    label: "Planning agent",
-    short: "Agent",
+    label: "AI planner",
+    short: "Planner",
     icon: Sparkles,
-    stages: ["proposed", "decided"],
   },
   {
     id: "plans",
     href: "/plans",
-    label: "Migration plans",
-    short: "Plans",
+    label: "Plan",
+    short: "Plan",
     icon: GitBranch,
-    stages: ["cleared"],
   },
   {
     id: "runs",
     href: "/runs",
-    label: "Runs & quarantine",
-    short: "Runs",
+    label: "Run results",
+    short: "Results",
     icon: FlaskConical,
-    stages: ["inspected"],
   },
   {
     id: "target",
     href: "/target",
-    label: "Target & reconciliation",
-    short: "Target",
+    label: "Load & verify",
+    short: "Load",
     icon: Database,
-    stages: ["landed", "reconciled"],
   },
   {
     id: "history",
@@ -69,65 +62,38 @@ export const navigation = [
     label: "Activity log",
     short: "Log",
     icon: History,
-    stages: [],
   },
 ] as const;
 
-/** The section's lifecycle state: attention outranks running, which outranks unfinished. */
-function sectionState(ids: readonly string[], stages: Stage[]) {
-  const own = stages.filter((s) => ids.includes(s.id));
-  if (!own.length) return null;
-  for (const s of ["attention", "running", "current", "waiting"] as const)
-    if (own.some((o) => o.state === s)) return s;
-  return "done";
-}
-
-export function Rail({
-  view,
-  stages,
-  planCount,
-}: {
-  view: string;
-  stages: Stage[] | null;
-  planCount: number;
-}) {
+export function Rail({ view }: { view: string }) {
   return (
     <aside className="rail">
       <Link href="/" className="wordmark" aria-label="Manifest overview">
         <span className="wordmark-name">manifest</span>
-        <span className="wordmark-form">Migration declaration</span>
+        <span className="wordmark-form">Migration workbench</span>
       </Link>
       <nav aria-label="Main navigation" className="rail-nav">
-        {navigation.map((n) => {
-          const state = stages ? sectionState(n.stages, stages) : null;
-          return (
-            <Link
-              key={n.id}
-              href={n.href}
-              aria-label={n.label}
-              aria-current={view === n.id ? "page" : undefined}
-              className={`rail-link ${view === n.id ? "active" : ""}`}
-            >
-              <n.icon size={17} aria-hidden="true" />
-              <span className="rail-label">{n.label}</span>
-              <span className="rail-short" aria-hidden="true">
-                {n.short}
-              </span>
-              {n.id === "plans" && planCount > 0 && (
-                <span className="rail-count">v{planCount}</span>
-              )}
-              {state && (
-                <span className={`rail-state ${state}`} aria-hidden="true" />
-              )}
-            </Link>
-          );
-        })}
+        {navigation.map((n) => (
+          <Link
+            key={n.id}
+            href={n.href}
+            aria-label={n.label}
+            aria-current={view === n.id ? "page" : undefined}
+            className={`rail-link ${view === n.id ? "active" : ""}`}
+          >
+            <n.icon size={17} aria-hidden="true" />
+            <span className="rail-label">{n.label}</span>
+            <span className="rail-short" aria-hidden="true">
+              {n.short}
+            </span>
+          </Link>
+        ))}
       </nav>
       <div className="rail-foot">
         <p>
-          One source · one target
+          One source, one target
           <br />
-          1,000 records maximum
+          Up to 1,000 records
         </p>
       </div>
     </aside>

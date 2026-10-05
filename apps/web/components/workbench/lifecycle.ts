@@ -56,70 +56,70 @@ export function lifecycle(state: WorkbenchState): Stage[] {
   const stages: Stage[] = [
     {
       id: "staged",
-      label: "Staged",
-      detail: `${state.dataset.recordCount} of ${state.maxRecords} records`,
+      label: "Source ready",
+      detail: `${state.dataset.recordCount} records`,
       state: "done",
       href: "/schemas",
-      action: "Inspect source",
+      action: "View source data",
     },
     {
       id: "proposed",
-      label: "Proposed",
+      label: "Plan created",
       detail: running
-        ? "Planner inspecting…"
+        ? "AI planner working…"
         : plan
-          ? `v${plan.version} · ${plan.authorName}`
-          : "No proposal yet",
+          ? `Version ${plan.version}`
+          : "Not started",
       state: running ? "running" : plan ? "done" : "waiting",
       href: "/agent",
-      action: "Draft migration plan",
+      action: "Create plan with AI",
     },
     {
       id: "decided",
-      label: "Decided",
+      label: "Questions answered",
       detail: !plan
-        ? "Awaiting proposal"
+        ? "Waiting for a plan"
         : open
-          ? `${open} decisions open`
-          : "All decisions recorded",
+          ? `${open} still open`
+          : "All answered",
       state: !plan ? "waiting" : open ? "attention" : "done",
       href: "/agent",
-      action: "Answer decisions",
+      action: "Answer questions",
     },
     {
       id: "inspected",
-      label: "Inspected",
+      label: "Dry run done",
       detail: dry
         ? `${dry.counts.accepted} accepted · ${dry.counts.rejected} held`
-        : "No dry run on latest version",
+        : "Not run on the latest version",
       state: dry ? "done" : "waiting",
       href: dry ? `/runs/${dry.id}` : planHref,
       action: "Run dry run",
     },
     {
       id: "cleared",
-      label: "Cleared",
+      label: "Approved",
       detail: plan?.approval
-        ? `v${plan.version} signed by ${plan.approval.approvedBy}`
+        ? `Version ${plan.version} by ${plan.approval.approvedBy}`
         : approved
-          ? `v${approved.version} cleared · v${plan?.version} draft`
-          : "Awaiting signature",
+          ? `Only version ${approved.version} approved`
+          : "Not approved",
       state: plan?.approval ? "done" : "waiting",
       href: planHref,
       action: "Review & approve",
     },
     {
       id: "landed",
-      label: "Landed",
+      label: "Loaded",
       detail: live
         ? live.status === "failed"
-          ? "Interrupted · retry is safe"
+          ? "Stopped · safe to retry"
           : live.status === "running"
-            ? "Loading batches…"
-            : `${live.insertedCount + live.skippedExisting} rows · attempt ${live.attempt}`
+            ? "Loading…"
+            : `${live.insertedCount + live.skippedExisting} rows`
         : latestExecution
-          ? "Recalled by rollback"
-          : "Nothing loaded",
+          ? "Undone by rollback"
+          : "Not loaded",
       state: live
         ? live.status === "failed"
           ? "attention"
@@ -128,24 +128,23 @@ export function lifecycle(state: WorkbenchState): Stage[] {
             : "done"
         : "waiting",
       href: live ? `/runs/${live.id}` : "/target",
-      action:
-        live?.status === "failed" ? "Retry migration" : "Execute migration",
+      action: live?.status === "failed" ? "Retry the load" : "Load the data",
     },
     {
       id: "reconciled",
-      label: "Reconciled",
+      label: "Totals checked",
       detail: recon
         ? recon.status === "matched"
           ? "Totals match"
           : "Totals differ"
-        : "Not reconciled",
+        : "Not checked",
       state: recon
         ? recon.status === "matched"
           ? "done"
           : "attention"
         : "waiting",
       href: "/target",
-      action: "Reconcile totals",
+      action: "Check totals",
     },
   ];
 

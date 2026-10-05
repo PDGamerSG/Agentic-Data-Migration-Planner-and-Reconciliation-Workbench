@@ -26,7 +26,7 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     });
     expect(cleanup.ok()).toBe(true);
   }
-  await page.goto("/");
+  await page.goto("/agent");
   await page
     .getByRole("textbox", { name: "Operator name" })
     .fill("Test operator");
@@ -34,7 +34,9 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     (r) => r.url().endsWith("/api/agent") && r.request().method() === "POST",
   );
   await page
-    .getByRole("button", { name: /^(Draft migration plan|Re-draft plan)$/ })
+    .getByRole("button", {
+      name: /^(Create plan with AI|Update plan with answers)$/,
+    })
     .click();
   const initialSession = await (await initialResponse).json();
   await expect
@@ -49,7 +51,7 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     )
     .toBe("succeeded");
   await expect(
-    page.getByRole("heading", { name: "Business decisions" }),
+    page.getByRole("heading", { name: "Questions for you" }),
   ).toBeVisible();
   await expect(
     page.getByRole("combobox", {
@@ -68,12 +70,12 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   for (const [name, value] of options)
     await page.getByRole("combobox", { name, exact: true }).selectOption(value);
   await expect(
-    page.getByRole("button", { name: "Re-draft with answers" }),
+    page.getByRole("button", { name: "Update plan with answers" }),
   ).toBeEnabled();
   const redraftResponse = page.waitForResponse(
     (r) => r.url().endsWith("/api/agent") && r.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Re-draft with answers" }).click();
+  await page.getByRole("button", { name: "Update plan with answers" }).click();
   const redraftSession = await (await redraftResponse).json();
   await expect
     .poll(
@@ -89,19 +91,19 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   const latestState = await (await page.request.get("/api/state")).json();
   await page
     .getByRole("link", {
-      name: `Review v${latestState.plans.find((p: { agentSessionId: string }) => p.agentSessionId === redraftSession.id).version}`,
+      name: `Open version ${latestState.plans.find((p: { agentSessionId: string }) => p.agentSessionId === redraftSession.id).version}`,
       exact: true,
     })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Field mapping manifest" }),
+    page.getByRole("heading", { name: "Field mapping" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review & approve" }),
   ).toBeDisabled();
   await page.getByRole("button", { name: "Run dry run" }).click();
   await expect(
-    page.getByRole("heading", { name: "Quarantine manifest" }),
+    page.getByRole("heading", { name: "Held records" }),
   ).toBeVisible();
   const heldRecord = page.locator(".record-grid button.held").first();
   await heldRecord.focus();
@@ -118,7 +120,7 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     page.getByRole("heading", { name: "Field errors" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Transformation trace" }),
+    page.getByRole("heading", { name: "Transformation steps" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Close dialog" }).click();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
@@ -130,26 +132,20 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   await page.getByRole("link", { name: "Review this plan" }).click();
   await page.getByRole("button", { name: "Review & approve" }).click();
   await expect(
-    page.getByRole("button", { name: "Sign & approve this version" }),
+    page.getByRole("button", { name: "Approve this version" }),
   ).toBeDisabled();
   for (const checkbox of await page
     .getByRole("dialog")
     .getByRole("checkbox")
     .all())
     await checkbox.check();
-  await page
-    .getByRole("button", { name: "Sign & approve this version" })
-    .click();
+  await page.getByRole("button", { name: "Approve this version" }).click();
   await expect(page.getByText("Approved by Test operator")).toBeVisible();
-  await page
-    .getByRole("link", { name: "Target & reconciliation", exact: true })
-    .click();
+  await page.getByRole("link", { name: "Load & verify", exact: true }).click();
   await page
     .getByRole("checkbox", { name: "Simulate interruption after batch 3" })
     .check();
-  await page
-    .getByRole("button", { name: "Execute approved migration" })
-    .click();
+  await page.getByRole("button", { name: "Load approved records" }).click();
   await expect(
     page.getByRole("button", { name: "Retry migration safely" }),
   ).toBeVisible();
@@ -160,9 +156,7 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   await expect(
     page.getByTestId("skipped-existing").locator("strong"),
   ).toHaveText("150");
-  await page
-    .getByRole("link", { name: "Target & reconciliation", exact: true })
-    .click();
+  await page.getByRole("link", { name: "Load & verify", exact: true }).click();
   await expect(page.getByText("matched", { exact: true })).toBeVisible();
   const state = await (await page.request.get("/api/state")).json();
   const latest = state.runs.find(
@@ -177,16 +171,14 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
   await expect(page.locator(".record-grid .cell.held")).toHaveCount(
     latest.counts.rejected,
   );
-  await page
-    .getByRole("link", { name: "Target & reconciliation", exact: true })
-    .click();
+  await page.getByRole("link", { name: "Load & verify", exact: true }).click();
   await page.getByRole("button", { name: "Roll back migration" }).click();
   await page
     .getByRole("textbox", { name: "Reason for rollback" })
     .fill("Completed end-to-end verification");
   await page.getByRole("button", { name: "Confirm rollback" }).click();
   await expect(
-    page.getByRole("heading", { name: "20 records at the destination" }),
+    page.getByRole("heading", { name: "20 rows in the target table" }),
   ).toBeVisible();
   await expect(page.getByText("matched", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Activity log", exact: true }).click();
@@ -214,9 +206,7 @@ test("persists theme choice across reloads and navigation", async ({
     path: "test-results/dark-overview.png",
     fullPage: true,
   });
-  await page
-    .getByRole("link", { name: "Schemas & source", exact: true })
-    .click();
+  await page.getByRole("link", { name: "Source data", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.getByRole("button", { name: "Switch to light theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
@@ -267,7 +257,7 @@ test("rejects cross-origin writes and remains usable on a phone", async ({
     page.getByRole("heading", { name: "Dataset", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Schemas & source", exact: true }),
+    page.getByRole("link", { name: "Source data", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(

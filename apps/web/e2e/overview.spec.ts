@@ -68,16 +68,16 @@ test("uninspected records show useful guidance instead of an empty grid", async 
   );
   await page.goto("/");
   const status = page.getByRole("region", {
-    name: /^(Consignment|Record status)$/,
+    name: "Record status",
   });
   await expect(status.getByRole("heading", { level: 3 })).toHaveText(
-    "250 records waiting for inspection",
+    "250 records not tested yet",
   );
   await expect(status.locator(".record-grid")).toHaveCount(0);
   await expect(
-    status.getByRole("link", { name: "Open planning agent" }),
+    status.getByRole("link", { name: "Open AI planner" }),
   ).toHaveAttribute("href", "/agent");
-  await status.getByRole("link", { name: "Browse source records" }).click();
+  await status.getByRole("link", { name: "View source data" }).click();
   await expect(page).toHaveURL(/\/schemas$/);
 });
 
@@ -100,16 +100,17 @@ test("a new draft does not reuse an older plan's inspection", async ({
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
   await page.goto("/");
   const status = page.getByRole("region", {
-    name: /^(Consignment|Record status)$/,
+    name: "Record status",
   });
   await expect(status.getByRole("heading", { level: 3 })).toHaveText(
-    "250 records waiting for inspection",
+    "250 records not tested yet",
   );
-  await expect(status).toContainText("Version 2 needs its own dry run");
+  await expect(status).toContainText("Run a dry run of version 2");
   await expect(status.locator(".record-grid")).toHaveCount(0);
-  await expect(
-    status.getByRole("link", { name: "Review plan" }),
-  ).toHaveAttribute("href", `/plans/${draft.id}`);
+  await expect(status.getByRole("link", { name: "Open plan" })).toHaveAttribute(
+    "href",
+    `/plans/${draft.id}`,
+  );
   for (const [name, width, height] of [
     ["desktop", 1440, 1000],
     ["mobile", 390, 844],
@@ -142,7 +143,7 @@ test("overview shows inspection counts and opens held-record evidence", async ({
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
   await page.goto("/");
   const status = page.getByRole("region", {
-    name: /^(Consignment|Record status)$/,
+    name: "Record status",
   });
   await expect(status.locator(".record-grid .cell")).toHaveCount(250);
   await expect(status.locator(".record-grid .accepted")).toHaveCount(
@@ -151,7 +152,7 @@ test("overview shows inspection counts and opens held-record evidence", async ({
   await expect(status.locator(".record-grid button.held")).toHaveCount(
     inspection.result.counts.rejected,
   );
-  await expect(status).toContainText("Each square is one source record");
+  await expect(status).toContainText("Each square is one record");
   const held = status.locator(".record-grid button.held").first();
   await held.focus();
   await held.press("Enter");
@@ -196,7 +197,7 @@ test("inspection totals remain visible while record details load", async ({
   try {
     await page.goto("/");
     const status = page.getByRole("region", {
-      name: /^(Consignment|Record status)$/,
+      name: "Record status",
     });
     await expect(status.locator(".tally-line")).toContainText(
       `${inspection.result.counts.accepted} accepted`,
@@ -223,7 +224,7 @@ test("record-detail failure preserves totals and a recovery link", async ({
   );
   await page.goto("/");
   const status = page.getByRole("region", {
-    name: /^(Consignment|Record status)$/,
+    name: "Record status",
   });
   await expect(status).toContainText("Record details could not be loaded");
   await expect(status.locator(".tally-line")).toContainText(
@@ -255,10 +256,10 @@ test("execution and failed dry runs do not count as a successful inspection", as
   );
   await page.goto("/");
   const status = page.getByRole("region", {
-    name: /^(Consignment|Record status)$/,
+    name: "Record status",
   });
   await expect(status.getByRole("heading", { level: 3 })).toHaveText(
-    "250 records waiting for inspection",
+    "250 records not tested yet",
   );
   await expect(status.locator(".tally-line")).toHaveCount(0);
 });

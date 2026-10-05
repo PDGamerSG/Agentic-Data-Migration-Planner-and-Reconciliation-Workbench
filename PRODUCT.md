@@ -31,7 +31,7 @@ The agent proposes and a human signs. The agent can only inspect and test throug
 
 ## Capabilities and Constraints
 
-- Sections: Overview, Schemas & source, Planning agent, Migration plans (version list, mapping editor, diff, approval), Runs & quarantine (dry runs and executions, counts, quarantine with field-level evidence and transform traces), Target & reconciliation (target browser, reconciliation report, rollback), Activity log.
+- Sections: Overview, Source data, AI planner, Plan (version list, mapping editor, diff, approval), Run results (dry runs and executions, counts, held records with field-level evidence and transform traces), Load & verify (target browser, totals check, rollback), Activity log.
 - One source, one target, a 1,000-record limit. Only the closed transformation catalog may be used. Plans and approvals are immutable: edits create new versions.
 - Counts vocabulary: source, transformed, accepted, rejected (quarantined). Invariant: accepted + rejected = source.
 - Not in scope: production database access, arbitrary transformation code, distributed migration, live cloud connectors, multi-user auth.

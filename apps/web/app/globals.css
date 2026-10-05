@@ -315,41 +315,6 @@ small {
 .rail-short {
   display: none;
 }
-.rail-count {
-  font-family: var(--mono);
-  font-stretch: 87.5%;
-  font-size: 10.5px;
-  color: var(--rail-muted);
-}
-.rail-state {
-  width: 9px;
-  height: 9px;
-  border: 1.5px dashed var(--rail-muted);
-}
-.rail-state.done {
-  border: 0;
-  background: var(--rail-ink);
-}
-.rail-state.current {
-  border-style: solid;
-  border-color: var(--rail-active);
-  animation: blink 2.4s ease-in-out infinite;
-}
-.rail-state.attention {
-  border: 0;
-  background: repeating-linear-gradient(
-    -45deg,
-    #ff9a90 0 2px,
-    transparent 2px 4px
-  );
-  outline: 1.5px solid #ff9a90;
-}
-.rail-state.running {
-  border-style: solid;
-  border-radius: 50%;
-  border-color: var(--rail-ink) transparent;
-  animation: spin 1s linear infinite;
-}
 @keyframes blink {
   50% {
     opacity: 0.35;
@@ -1438,20 +1403,7 @@ button.cell {
   animation: spin 1s linear infinite;
 }
 .routing-next {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   padding: 16px 18px 18px;
-}
-.routing-next > span {
-  font-size: 10.5px;
-  font-weight: 650;
-  font-stretch: 75%;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--form);
-}
-.routing-next p {
   color: var(--ink-2);
 }
 
@@ -1915,17 +1867,6 @@ p.clearance-signed {
 .editor-intro {
   color: var(--ink-2);
   max-width: 80ch;
-}
-.catalog {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.catalog code {
-  font-size: 11px;
-  padding: 2px 6px;
-  border: 1px solid var(--rule);
-  background: var(--paper-sunk);
 }
 .mapping-editor {
   display: flex;
@@ -2683,8 +2624,7 @@ p.clearance-signed {
   }
   .wordmark-form,
   .rail-foot,
-  .rail-label,
-  .rail-count {
+  .rail-label {
     display: none;
   }
   .rail-nav {
@@ -2713,13 +2653,6 @@ p.clearance-signed {
     bottom: -8px;
     width: auto;
     height: 3px;
-  }
-  .rail-state {
-    position: absolute;
-    top: 5px;
-    right: 6px;
-    width: 7px;
-    height: 7px;
   }
   .desk {
     margin-left: 0;
@@ -2969,14 +2902,6 @@ p.clearance-signed {
 .title-actions {
   align-items: center;
 }
-.declaration-no {
-  padding: 4px 8px;
-  border: 1.5px solid var(--form);
-  color: var(--form-strong);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
 /* Only human sign-offs carry violet; machine steps are stamped in form ink. */
 .route.done.machine .route-stamp {
   border: 2px solid var(--form);
@@ -3041,9 +2966,6 @@ p.clearance-signed {
   }
   .title-actions {
     flex-wrap: wrap;
-  }
-  .declaration-no {
-    display: none;
   }
 }
 

@@ -23,11 +23,10 @@ export function ApproveDialog({
   const ready =
     !busy && !!actor.trim() && high.every((r) => acknowledged.includes(r.id));
   return (
-    <Dialog title={`Clear migration plan v${plan.version}`} onClose={onClose}>
+    <Dialog title={`Approve plan version ${plan.version}`} onClose={onClose}>
       <p className="dialog-intro">
-        Your signature binds to this exact plan fingerprint and the dry run
-        below. Any later edit creates a new version that needs its own
-        signature.
+        Approval applies only to this exact version and its dry run. Any edit
+        creates a new version that needs approval again.
       </p>
       <div className="form-grid two">
         <div className="box">
@@ -37,7 +36,7 @@ export function ApproveDialog({
           </div>
         </div>
         <div className="box">
-          <span className="box-label">Dry run inspected</span>
+          <span className="box-label">Dry run result</span>
           <div className="box-value mono">
             {dryForApproval.counts.accepted} accepted ·{" "}
             {dryForApproval.counts.rejected} held
@@ -45,7 +44,7 @@ export function ApproveDialog({
         </div>
       </div>
       <fieldset className="acknowledge">
-        <legend>Acknowledge each high risk</legend>
+        <legend>Confirm each high risk</legend>
         {high.map((r) => (
           <label className="check-row" key={r.id}>
             <input
@@ -65,15 +64,15 @@ export function ApproveDialog({
         ))}
       </fieldset>
       <div className="signature-line">
-        <span>Signed</span>
-        <strong>{actor.trim() || "Enter your name in the Operator box"}</strong>
+        <span>Approved by</span>
+        <strong>{actor.trim() || "Enter your name at the top"}</strong>
       </div>
       <button
         className="button clear full"
         disabled={!ready}
         onClick={() =>
           void act(
-            "Signing approval",
+            "Approving",
             "approve",
             {
               planId: plan.id,
@@ -84,14 +83,12 @@ export function ApproveDialog({
             },
             () => {
               onClose();
-              onDone(
-                "Plan cleared. Execution is now available in the target ledger.",
-              );
+              onDone("Plan approved. Load the data on Load & verify.");
             },
           )
         }
       >
-        Sign & approve this version
+        Approve this version
       </button>
     </Dialog>
   );
@@ -116,11 +113,10 @@ export function RollbackDialog({
     (r) => r._migration_lineage_id === null,
   ).length;
   return (
-    <Dialog title="Recall this migration" onClose={onClose}>
+    <Dialog title="Roll back this migration" onClose={onClose}>
       <p className="dialog-intro">
-        Rollback deletes only the rows owned by lineage{" "}
-        <code>{execution.lineageId.slice(0, 8)}</code>. The {preExisting}{" "}
-        pre-existing rows stay. Rollback is refused if any migrated row was
+        This deletes only the rows this migration added. The {preExisting} rows
+        that were already there stay. Rollback stops if a migrated row was
         edited after loading.
       </p>
       <div className="form-grid two">
@@ -155,7 +151,7 @@ export function RollbackDialog({
             (r) => {
               onClose();
               onDone(
-                `Rollback complete. ${r.rowsDeleted} migration-owned rows removed.`,
+                `Rollback complete. ${r.rowsDeleted} migrated rows removed.`,
               );
             },
           )
@@ -182,7 +178,7 @@ export function EvidenceDialog({
   const failing = new Set(errors.map((e) => e.targetField));
   return (
     <Dialog
-      title={`Inspection report · ${outcome.recordKey || `row ${outcome.rowIndex + 1}`}`}
+      title={`Record ${outcome.recordKey || `row ${outcome.rowIndex + 1}`}`}
       onClose={onClose}
       wide
     >
@@ -232,7 +228,7 @@ export function EvidenceDialog({
           </article>
         ))}
       </div>
-      <h3 className="dialog-heading">Transformation trace</h3>
+      <h3 className="dialog-heading">Transformation steps</h3>
       <div className="trace-list">
         {outcome.trace.map((t) => (
           <details
@@ -270,7 +266,7 @@ export function EvidenceDialog({
           </details>
         ))}
       </div>
-      <h3 className="dialog-heading">Candidate target row</h3>
+      <h3 className="dialog-heading">Resulting target row</h3>
       <dl className="candidate-row">
         {Object.entries(outcome.row ?? {}).map(([field, value]) => (
           <div key={field} className={failing.has(field) ? "failed" : ""}>

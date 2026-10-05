@@ -35,11 +35,11 @@ export function Runs() {
     return (
       <div className="sheet">
         <Empty
-          title="Every dry run leaves a record."
-          description="Draft a plan, enter your operator name and run a dry run. Accepted rows and quarantine evidence appear here."
+          title="No runs yet"
+          description="Open the plan and run a dry run. Results appear here."
         >
           <Link href="/plans" className="button primary">
-            Review plans
+            Open plan
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </Empty>
@@ -113,21 +113,21 @@ export function Runs() {
       </div>
 
       <div className="form-grid four standalone tally">
-        <Box n={1} label="Source">
+        <Box label="Source">
           <span className="figure">{counts.source}</span>
-          <small>Staged source records</small>
+          <small>Records read</small>
         </Box>
-        <Box n={2} label="Transformed">
+        <Box label="Transformed">
           <span className="figure">{counts.transformed}</span>
-          <small>Every pipeline completed</small>
+          <small>Converted without error</small>
         </Box>
-        <Box n={3} label="Accepted">
+        <Box label="Accepted">
           <span className="figure">{counts.accepted}</span>
-          <small>Cleared for the target</small>
+          <small>Ready to load</small>
         </Box>
-        <Box n={4} label="Rejected · held">
+        <Box label="Held">
           <span className="figure">{counts.rejected}</span>
-          <small>Held in quarantine with evidence</small>
+          <small>Failed a check</small>
         </Box>
       </div>
 
@@ -139,22 +139,18 @@ export function Runs() {
         <span className="fingerprint-note">
           {run.kind === "dry_run"
             ? previousDry
-              ? "Deterministic: identical to an earlier dry run of this version."
-              : "Deterministic: the same plan and data always produce this fingerprint."
-            : "Execution reuses the approved dry-run result."}
+              ? "Same result as an earlier dry run of this version."
+              : "The same plan and data always give this result."
+            : "Uses the approved dry run result."}
         </span>
         <Hash value={run.result.resultHash} label="Result" />
       </div>
 
       {run.kind === "execution" && (
         <Sheet
-          title="Load"
+          title="Load progress"
           id="load-heading"
-          meta={
-            <span className="mono">
-              batches of 50 · lineage {run.lineageId.slice(0, 8)}
-            </span>
-          }
+          meta={<span>Batches of 50 records</span>}
         >
           <div className="load">
             <ol
@@ -178,19 +174,19 @@ export function Runs() {
             </ol>
             <div className="form-grid three execution-summary">
               <div className="box" data-testid="inserted">
-                <span className="box-label">Inserted this attempt</span>
+                <span className="box-label">Inserted now</span>
                 <strong className="box-value figure">
                   {run.insertedCount}
                 </strong>
               </div>
               <div className="box" data-testid="skipped-existing">
-                <span className="box-label">Already loaded · skipped</span>
+                <span className="box-label">Skipped, already loaded</span>
                 <strong className="box-value figure">
                   {run.skippedExisting}
                 </strong>
               </div>
               <div className="box">
-                <span className="box-label">Committed batches</span>
+                <span className="box-label">Batches done</span>
                 <strong className="box-value figure">
                   {run.batchesCommitted}
                   <small> / {batches}</small>
@@ -202,8 +198,8 @@ export function Runs() {
             >
               {run.error ??
                 (run.skippedExisting
-                  ? `${run.skippedExisting} rows were offered again and refused by the unique legacy_id key. No duplicates.`
-                  : "Every landed row carries this migration's lineage and its expected content hash.")}
+                  ? `${run.skippedExisting} rows were already loaded, so they were skipped. No duplicates.`
+                  : "Each loaded row is tagged with this migration, so it can be undone.")}
             </p>
             {run.status === "failed" && runPlan && (
               <button
@@ -219,9 +215,9 @@ export function Runs() {
       )}
 
       <Sheet
-        title="Consignment"
+        title="Record map"
         id="run-map-heading"
-        meta={<span>Each cell is one source record</span>}
+        meta={<span>One square per record</span>}
       >
         <div className="sheet-body">
           <RecordMap
@@ -239,7 +235,7 @@ export function Runs() {
       </Sheet>
 
       <Sheet
-        title="Quarantine manifest"
+        title="Held records"
         id="quarantine-heading"
         meta={<Mark status="held" label={`${counts.rejected} held`} />}
       >
@@ -353,11 +349,8 @@ export function Runs() {
       {run.kind === "dry_run" && (
         <div className="closing-band">
           <div>
-            <strong>The mock target is untouched.</strong>
-            <span>
-              Review the evidence, then sign this plan version to enable
-              execution.
-            </span>
+            <strong>No data was written.</strong>
+            <span>If these results look right, approve this plan version.</span>
           </div>
           <Link
             className="button secondary"

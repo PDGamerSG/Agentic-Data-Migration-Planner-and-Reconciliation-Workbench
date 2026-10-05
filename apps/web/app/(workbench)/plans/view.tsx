@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import type { PlanSpec } from "@manifest/core";
-import { CATALOG } from "@manifest/core/transforms";
 import { MappingEditor } from "@/components/mapping-editor";
 import { useWorkbench } from "@/components/workbench/context";
 import { Empty, Hash, Mark, Sheet, time } from "@/components/workbench/ui";
@@ -28,15 +27,15 @@ export function Plans() {
     return (
       <div className="sheet">
         <Empty
-          title="No plan on file."
-          description="Start the planning agent to draft version 1. Every later edit becomes a new immutable version."
+          title="No plan yet"
+          description="The AI planner creates the first version."
         >
           <button
             className="button primary"
             onClick={wb.draft}
             disabled={!!wb.busy || wb.runningSession}
           >
-            Draft migration plan
+            Create plan with AI
           </button>
         </Empty>
       </div>
@@ -92,15 +91,13 @@ export function Plans() {
       </div>
       {changes && (
         <p className="diff-line">
-          <b>Changed from parent:</b>{" "}
-          {changes.length
-            ? changes.join(", ")
-            : "mappings unchanged; decisions updated."}
+          <b>Changes from the previous version:</b>{" "}
+          {changes.length ? changes.join(", ") : "only answers changed."}
         </p>
       )}
 
       <Sheet
-        title="Field mapping manifest"
+        title="Field mapping"
         id="mapping-heading"
         meta={
           <button
@@ -114,22 +111,15 @@ export function Plans() {
         {editing ? (
           <div className="plan-editor">
             <p className="editor-intro">
-              Pick sources and transforms from the closed catalog only. Saving
-              validates the whole plan and files a new draft; this version stays
-              unchanged.
+              Saving creates a new version. This version stays as it is.
             </p>
-            <div className="catalog" aria-label="Supported transformations">
-              {Object.keys(CATALOG).map((op) => (
-                <code key={op}>{op}</code>
-              ))}
-            </div>
             <MappingEditor
               spec={parsed}
               sourceFields={state.sourceSchema.fields.map((f) => f.name)}
               onChange={(s) => setEditor(JSON.stringify(s, null, 2))}
             />
             <details className="advanced">
-              <summary>Advanced: edit the JSON specification</summary>
+              <summary>Edit raw JSON</summary>
               <textarea
                 aria-label="Plan specification"
                 spellCheck={false}
@@ -145,7 +135,7 @@ export function Plans() {
                   aria-label="Change summary"
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
-                  placeholder="What changed and why"
+                  placeholder="What changed"
                   maxLength={500}
                 />
               </label>
@@ -172,12 +162,12 @@ export function Plans() {
             <table className="ledger-table mapping">
               <thead>
                 <tr>
-                  <th scope="col">Item</th>
+                  <th scope="col">#</th>
                   <th scope="col">Source</th>
                   <th scope="col">Target</th>
-                  <th scope="col">Transformation pipeline</th>
+                  <th scope="col">Steps</th>
                   <th scope="col" className="num">
-                    Measured
+                    Pass rate
                   </th>
                 </tr>
               </thead>
@@ -214,7 +204,7 @@ export function Plans() {
                       </td>
                       <td className="num">
                         {rate === null ? (
-                          <span className="muted">re-test</span>
+                          <span className="muted">not tested</span>
                         ) : (
                           <span
                             className={`measure ${rate === 100 ? "full" : "partial"}`}
@@ -239,9 +229,8 @@ export function Plans() {
         )}
         <div className="sheet-foot">
           <span>
-            {plan.spec.mappings.length} target fields mapped ·{" "}
-            {plan.spec.unmappedSourceFields.length} source fields dropped on
-            purpose
+            {plan.spec.mappings.length} fields mapped ·{" "}
+            {plan.spec.unmappedSourceFields.length} source fields not used
           </span>
           <span className="mono">As of {plan.spec.asOfDate}</span>
         </div>
@@ -253,7 +242,7 @@ export function Plans() {
         meta={
           <span>
             {plan.proposal.risks.filter((r) => r.severity === "high").length}{" "}
-            need acknowledgement
+            high, confirm when approving
           </span>
         }
       >
@@ -282,30 +271,27 @@ export function Plans() {
         aria-labelledby="clearance-heading"
       >
         <div className="clearance-text">
-          <h2 id="clearance-heading">Clearance</h2>
+          <h2 id="clearance-heading">Approval</h2>
           {plan.approval ? (
             <>
               <p className="clearance-signed">
                 Approved by {plan.approval.approvedBy}
               </p>
-              <p>
-                The signature is bound to this version and its dry run.
-                Execution is available in the target ledger.
-              </p>
+              <p>Next: load the data on Load &amp; verify.</p>
             </>
           ) : (
             <p>
               {wb.openQuestions
-                ? `${wb.openQuestions} business decisions are still open. Answer them in the planning agent, then re-draft.`
+                ? `${wb.openQuestions} questions are still open. Answer them in the AI planner first.`
                 : !wb.dryForApproval
-                  ? "Run a dry run of this exact version before it can be signed."
-                  : "Review the dry-run evidence, acknowledge the high risks, and sign this exact version."}
+                  ? "Run a dry run of this version first."
+                  : "Check the dry run results, then approve."}
             </p>
           )}
         </div>
         {plan.approval ? (
           <div className="stamp-impression" key={plan.approval.id}>
-            <span className="stamp-word">Cleared</span>
+            <span className="stamp-word">Approved</span>
             <span className="stamp-line">
               v{plan.version} · {plan.approval.approvedBy}
             </span>

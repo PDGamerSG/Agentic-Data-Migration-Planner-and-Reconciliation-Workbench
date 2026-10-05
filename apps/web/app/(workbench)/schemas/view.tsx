@@ -18,7 +18,7 @@ export function Schemas() {
     <>
       <div className="split even">
         <Sheet
-          title="Source schema"
+          title="Source fields"
           id="source-schema"
           meta={
             <span className="mono">
@@ -39,16 +39,16 @@ export function Schemas() {
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <code>{f.name}</code>
-                  <span className="field-type">text · nullable</span>
+                  <span className="field-type">text</span>
                 </button>
               </li>
             ))}
           </ul>
         </Sheet>
         <Sheet
-          title="Target schema"
+          title="Target fields"
           id="target-schema"
-          meta={<span className="mono">target.customers · strict</span>}
+          meta={<span className="mono">target.customers</span>}
         >
           <ul className="field-list target" aria-label="Target fields">
             {state.targetSchema.fields.map((f, i) => (
@@ -80,44 +80,32 @@ export function Schemas() {
       <Sheet
         title={
           <>
-            Field profile · <code>{profile}</code>
+            Field details · <code>{profile}</code>
           </>
         }
         id="profile-heading"
-        meta={<span>Choose a source field to profile it</span>}
+        meta={<span>Pick a source field to see its values</span>}
       >
         <div className="form-grid profile">
           <div className="box">
-            <span className="box-label">
-              <b>1</b>
-              Empty values
-            </span>
+            <span className="box-label">Empty</span>
             <div className="box-value figure">
               {Math.round((empty / records.length) * 100)}%
             </div>
           </div>
           <div className="box">
-            <span className="box-label">
-              <b>2</b>
-              Distinct values
-            </span>
+            <span className="box-label">Unique values</span>
             <div className="box-value figure">{freq.size}</div>
           </div>
           <div className="box">
-            <span className="box-label">
-              <b>3</b>
-              Longest value
-            </span>
+            <span className="box-label">Longest value</span>
             <div className="box-value figure">
               {Math.max(0, ...values.map((v) => v?.length ?? 0))}
               <small> chars</small>
             </div>
           </div>
           <div className="box wide">
-            <span className="box-label">
-              <b>4</b>
-              Most frequent
-            </span>
+            <span className="box-label">Most common</span>
             <ul className="frequency">
               {top.map(([value, count]) => (
                 <li key={value}>
@@ -136,14 +124,9 @@ export function Schemas() {
       </Sheet>
 
       <Sheet
-        title="Source sample"
+        title="Source records"
         id="sample-heading"
-        meta={
-          <span className="mono">
-            {state.dataset.recordCount} / {state.maxRecords.toLocaleString()}{" "}
-            record limit
-          </span>
-        }
+        meta={<span className="mono">{state.dataset.recordCount} records</span>}
       >
         <div className="table-scroll">
           <table className="ledger-table">

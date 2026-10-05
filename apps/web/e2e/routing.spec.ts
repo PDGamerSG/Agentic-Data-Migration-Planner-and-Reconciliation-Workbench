@@ -3,11 +3,11 @@ import type { WorkbenchState } from "@manifest/db";
 
 const pages = [
   ["/", "Overview", "Migration overview"],
-  ["/schemas", "Schemas & source", "Inspect the source"],
-  ["/agent", "Planning agent", "Planning agent"],
-  ["/plans", "Migration plans", "Review the migration plan"],
-  ["/runs", "Runs & quarantine", "Runs & quarantine"],
-  ["/target", "Target & reconciliation", "Target & reconciliation"],
+  ["/schemas", "Source data", "Source data"],
+  ["/agent", "AI planner", "AI planner"],
+  ["/plans", "Plan", "Plan"],
+  ["/runs", "Run results", "Run results"],
+  ["/target", "Load & verify", "Load & verify"],
   ["/history", "Activity log", "Activity log"],
 ] as const;
 

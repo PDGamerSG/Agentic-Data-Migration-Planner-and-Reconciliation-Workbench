@@ -27,22 +27,21 @@ Status is never represented by a tint alone: committed states use solid marks, p
 
 ## Layout and workflow
 
-The desktop navigation rail connects all seven sections. An operator field, environment label and theme toggle remain in the header. Page titles explain the current task, while the primary action follows the next unfinished lifecycle stage.
+The desktop navigation rail connects all seven sections with plain labels and no status marks; progress lives on the overview. A name field, environment label and theme toggle remain in the header. Page titles explain the current task in one short sentence. Copy uses everyday words (AI planner, dry run, approve, load, check totals) and says each idea once.
 
-The overview contains five numbered dataset fields, a record-status section and a routing slip. Before inspection, record status explains the next step and links to the current plan or business decisions and the source records. After a successful dry run for the latest plan, it shows persisted counts and an interactive record map. Counts remain visible while details load; a failed detail request provides a recovery link instead of empty cells. The routing slip derives staged, proposed, decided, inspected, cleared, landed and reconciled states from plans, runs and approvals. A newer draft is explicitly distinguished from an older signed version. Interrupted execution points the operator toward a safe retry.
+The overview contains four dataset fields, a record-status section and a steps list. The title band carries one primary button for the next unfinished step. Before inspection, record status explains the next step and links to the current plan or open questions and the source records. After a successful dry run for the latest plan, it shows persisted counts and an interactive record map. Counts remain visible while details load; a failed detail request provides a recovery link instead of empty cells. The steps list derives source ready, plan created, questions answered, dry run done, approved, loaded and totals checked from plans, runs and approvals. A newer draft is explicitly distinguished from an older signed version. Interrupted execution points the operator toward a safe retry.
 
-| Screen                  | Main content and action                                                   |
-| ----------------------- | ------------------------------------------------------------------------- |
-| Overview                | Dataset bounds, per-record state and the next lifecycle action            |
-| Schemas & source        | Source profiles, target constraints and paginated source records          |
-| Planning agent          | Proposal, business decisions, risks and expandable tool evidence          |
-| Migration plans         | Version copies, mapping manifest, field editor, differences and clearance |
-| Runs & quarantine       | Counts, deterministic fingerprints, batch progress and rejection evidence |
-| Target & reconciliation | Existing and migration-owned rows, comparison checks, retry and rollback  |
-| Activity log            | Searchable events with expandable groups for repeated calls and batches   |
-| Login                   | Access-code entry and the source/target declaration                       |
+| Screen        | Main content and action                                                  |
+| ------------- | ------------------------------------------------------------------------ |
+| Overview      | Dataset bounds, per-record state and the next step                       |
+| Source data   | Source profiles, target constraints and paginated source records         |
+| AI planner    | Proposal, questions for the operator and expandable tool evidence        |
+| Plan          | Versions, field mapping, editor, differences, risks and approval         |
+| Run results   | Counts, deterministic fingerprints, batch progress and held-record proof |
+| Load & verify | Load, totals check, rollback and the target table                        |
+| Activity log  | Searchable events with expandable groups for repeated calls and batches  |
 
-“Held” is the visual label for rejected records in quarantine. The count definitions remain source, transformed, accepted and rejected; accepted plus rejected equals source. Acceptance alone does not imply that a row has been inserted.
+“Held” is the visual label for rejected records. The count definitions remain source, transformed, accepted and rejected; accepted plus rejected equals source. Acceptance alone does not imply that a row has been inserted.
 
 ## Record map and evidence
 

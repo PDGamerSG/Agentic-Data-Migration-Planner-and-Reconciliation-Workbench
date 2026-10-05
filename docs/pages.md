@@ -6,15 +6,15 @@ Every screen has its own folder in `apps/web/app/(workbench)`.
 - `view.tsx` contains that screen's content, buttons, tables and local UI state. Start here when changing what a page looks like or does.
 - `layout.tsx` wraps all these pages with the shared workbench. The parentheses in `(workbench)` group the files; they do not appear in the URL.
 
-| Screen                  | URL        | Route file                                  | UI file                                     |
-| ----------------------- | ---------- | ------------------------------------------- | ------------------------------------------- |
-| Overview                | `/`        | `apps/web/app/(workbench)/page.tsx`         | `apps/web/app/(workbench)/view.tsx`         |
-| Schemas & source        | `/schemas` | `apps/web/app/(workbench)/schemas/page.tsx` | `apps/web/app/(workbench)/schemas/view.tsx` |
-| Planning agent          | `/agent`   | `apps/web/app/(workbench)/agent/page.tsx`   | `apps/web/app/(workbench)/agent/view.tsx`   |
-| Migration plans         | `/plans`   | `apps/web/app/(workbench)/plans/page.tsx`   | `apps/web/app/(workbench)/plans/view.tsx`   |
-| Runs & quarantine       | `/runs`    | `apps/web/app/(workbench)/runs/page.tsx`    | `apps/web/app/(workbench)/runs/view.tsx`    |
-| Target & reconciliation | `/target`  | `apps/web/app/(workbench)/target/page.tsx`  | `apps/web/app/(workbench)/target/view.tsx`  |
-| Activity log            | `/history` | `apps/web/app/(workbench)/history/page.tsx` | `apps/web/app/(workbench)/history/view.tsx` |
+| Screen        | URL        | Route file                                  | UI file                                     |
+| ------------- | ---------- | ------------------------------------------- | ------------------------------------------- |
+| Overview      | `/`        | `apps/web/app/(workbench)/page.tsx`         | `apps/web/app/(workbench)/view.tsx`         |
+| Source data   | `/schemas` | `apps/web/app/(workbench)/schemas/page.tsx` | `apps/web/app/(workbench)/schemas/view.tsx` |
+| AI planner    | `/agent`   | `apps/web/app/(workbench)/agent/page.tsx`   | `apps/web/app/(workbench)/agent/view.tsx`   |
+| Plan          | `/plans`   | `apps/web/app/(workbench)/plans/page.tsx`   | `apps/web/app/(workbench)/plans/view.tsx`   |
+| Run results   | `/runs`    | `apps/web/app/(workbench)/runs/page.tsx`    | `apps/web/app/(workbench)/runs/view.tsx`    |
+| Load & verify | `/target`  | `apps/web/app/(workbench)/target/page.tsx`  | `apps/web/app/(workbench)/target/view.tsx`  |
+| Activity log  | `/history` | `apps/web/app/(workbench)/history/page.tsx` | `apps/web/app/(workbench)/history/view.tsx` |
 
 For example, to change the homepage's Record status section, open `apps/web/app/(workbench)/view.tsx`. To change the source-data table, open `apps/web/app/(workbench)/schemas/view.tsx`.
 

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { useWorkbench } from "@/components/workbench/context";
-import { Mark, Sheet, time, words } from "@/components/workbench/ui";
+import { Sheet, time, words } from "@/components/workbench/ui";
 
 type Event = ReturnType<typeof useWorkbench>["state"]["history"][number];
 type Row =
@@ -88,15 +88,10 @@ export function History() {
   ];
   return (
     <Sheet
-      title="Activity register"
+      title="Events"
       id="register-heading"
-      meta={<Mark status="succeeded" label="append-only" />}
+      meta={<span>Latest {state.history.length} · cannot be edited</span>}
     >
-      <p className="sheet-intro">
-        Database rules refuse any update or delete on these events. The latest{" "}
-        {state.history.length} are shown; repeated tool calls and committed
-        batches are folded.
-      </p>
       <div
         className="quarantine-codes"
         role="group"
@@ -126,7 +121,7 @@ export function History() {
         <label className="search">
           <Search size={15} aria-hidden="true" />
           <input
-            placeholder="Filter by event or operator"
+            placeholder="Search by event or name"
             aria-label="Filter history"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
