@@ -23,7 +23,7 @@ For example, to change the homepage's Record status section, open `apps/web/app/
 
 `apps/web/app/(workbench)/agent/[planId]/page.tsx` handles `/agent/<plan ID>` so older tests reopen their own saved questions. Updating answers creates a new child version attributed to the operator. New test starts an independent plan with empty answers on the same bounded dataset.
 
-The test library groups each initial plan and its revisions. My tests matches the entered name against version authors and run operators. Names are activity labels, not authenticated accounts. The header's Your runs menu links to that name's recent results; the library exposes the full persisted run history.
+The test library groups each initial plan and its revisions. My tests matches the entered name against version authors and run operators. Names are activity labels, not authenticated accounts. The bottom bar's Your runs menu links to that name's recent results; the library exposes the full persisted run history.
 
 `apps/web/app/(workbench)/plans/[planId]/page.tsx` handles `/plans/<plan ID>`.
 

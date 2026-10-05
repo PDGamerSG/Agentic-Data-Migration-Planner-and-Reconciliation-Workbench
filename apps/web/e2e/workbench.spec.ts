@@ -50,6 +50,11 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
       { timeout: 20000 },
     )
     .toBe("succeeded");
+  const initialState = await (await page.request.get("/api/state")).json();
+  const initialPlan = initialState.plans.find(
+    (p: { agentSessionId: string }) => p.agentSessionId === initialSession.id,
+  );
+  await expect(page).toHaveURL(new RegExp(`/agent/${initialPlan.id}$`));
   await expect(
     page.getByRole("heading", { name: "Questions for you" }),
   ).toBeVisible();
@@ -67,8 +72,11 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     ["Confirm legacy login IP addresses can be omitted.", "confirmed"],
     ["How should duplicate source emails be handled?", "first"],
   ];
-  for (const [name, value] of options)
-    await page.getByRole("combobox", { name, exact: true }).selectOption(value);
+  for (const [name, value] of options) {
+    const question = page.getByRole("combobox", { name, exact: true });
+    await question.selectOption(value);
+    await expect(question).toHaveValue(value);
+  }
   await expect(
     page.getByRole("button", { name: "Update plan with answers" }),
   ).toBeEnabled();
@@ -76,7 +84,11 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     (r) => r.url().endsWith("/api/agent") && r.request().method() === "POST",
   );
   await page.getByRole("button", { name: "Update plan with answers" }).click();
-  const redraftSession = await (await redraftResponse).json();
+  const submittedResponse = await redraftResponse;
+  expect(
+    Object.keys(submittedResponse.request().postDataJSON().answers),
+  ).toHaveLength(options.length);
+  const redraftSession = await submittedResponse.json();
   await expect
     .poll(
       async () => {
@@ -89,6 +101,10 @@ test("approve, interrupt, retry, reconcile and roll back a migration", async ({
     )
     .toBe("succeeded");
   const latestState = await (await page.request.get("/api/state")).json();
+  const answeredPlan = latestState.plans.find(
+    (p: { agentSessionId: string }) => p.agentSessionId === redraftSession.id,
+  );
+  expect(Object.keys(answeredPlan.answers)).toHaveLength(options.length);
   await page
     .getByRole("link", {
       name: `Open version ${latestState.plans.find((p: { agentSessionId: string }) => p.agentSessionId === redraftSession.id).version}`,
@@ -200,7 +216,7 @@ test("persists theme choice across reloads and navigation", async ({
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(
-    page.getByRole("heading", { name: "Dataset", exact: true }),
+    page.getByRole("heading", { name: "Migration path", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: "test-results/dark-overview.png",
@@ -254,7 +270,7 @@ test("rejects cross-origin writes and remains usable on a phone", async ({
     page.getByRole("heading", { name: "Migration overview" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Dataset", exact: true }),
+    page.getByRole("heading", { name: "Migration path", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Source data", exact: true }),
@@ -264,6 +280,14 @@ test("rejects cross-origin writes and remains usable on a phone", async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  const dock = page.getByRole("contentinfo", { name: "Operator controls" });
+  await expect(dock).toBeVisible();
+  const dockBounds = await dock.boundingBox();
+  expect(dockBounds!.y + dockBounds!.height).toBeCloseTo(844, 0);
+  await page.locator(".colophon").scrollIntoViewIfNeeded();
+  const footerBounds = await page.locator(".colophon").boundingBox();
+  expect(footerBounds!.y + footerBounds!.height).toBeLessThan(dockBounds!.y);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: "test-results/mobile-overview.png",
     fullPage: true,

@@ -23,7 +23,7 @@ The agent proposes and a human signs. The agent can only inspect and test throug
 
 ## Operating Context
 
-- Single-operator web workbench. The operator types their name into the header, and that name is recorded on approvals, runs and rollbacks.
+- Single-operator web workbench. The operator types their name into the bottom control bar, and that name is recorded on approvals, runs and rollbacks.
 - The deployed instance is open; there is no sign-in.
 - Data lives in Neon Postgres. The `public` schema holds the workbench and `target` is the mock destination.
 - The planner is Groq (`openai/gpt-oss-120b`), with a deterministic offline planner as fallback.
@@ -40,6 +40,7 @@ The agent proposes and a human signs. The agent can only inspect and test throug
 
 - Name: **Manifest** (lower-case wordmark `manifest`), subtitle "Migration workbench".
 - Light and dark themes are required, with a toggle.
+- The user chose Linear-inspired workspace navigation and Supabase-inspired tables and status controls. Operator controls belong in a bottom bar.
 
 ## Evidence on Hand
 

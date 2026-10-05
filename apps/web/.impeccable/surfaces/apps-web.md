@@ -7,17 +7,25 @@ related_targets: []
 
 ## Scope
 
-Whole Manifest workbench web app (`apps/web`): overview, schemas, agent, plans, runs, target, history. Mode: Operate.
+Whole Manifest web workbench, including the test library. Mode: Operate.
 
 ## Audience and task
 
-Assignment reviewers walking the full migration lifecycle in minutes, and migration operators reading dense evidence. Constraints: light + dark themes; existing behaviour, routes and API untouched.
+Migration operators inspect evidence and advance a bounded migration; reviewers walk the lifecycle in minutes. Preserve every existing route, immutable version, approval, dry run, load, retry, reconciliation and rollback. One source, one target, at most 1,000 records. Both themes and keyboard navigation are required.
 
 ## Direction contract
 
-THESIS: The migration is a declared consignment. Every screen is a page of one customs declaration — numbered boxes ruled in one form ink, typed values, a human clearance stamp. Refuses the gray-card SaaS dashboard with KPI tiles.
-OWN-WORLD: White top-copy ground; customs-blue form ink (#123c69) for every rule, box number and label; typed data in condensed mono; carbonless copy tints (yellow draft, pink held) as row/box fills; violet stamp-pad ink only for human clearance; red only for held/danger. State by mark form too: dashed pending, solid committed, hatched held, struck recalled. Dark = carbon sheet: blue-black ground, pale-blue impressions.
-STORY: Visitor sees the whole consignment (250 cells), sees which stage it is at on the routing slip, does the next stamped step, and can trace any held record to its exact failed step.
-FIRST VIEWPORT: Overview = title band (form title left, declaration no. + next-step action right); row of numbered boxes (consignor, consignee, packages 250/1,000, declared plan, planner); below, record map of 250 cells (2/3 width) with tally legend; routing slip of stamp boxes (1/3) with the next action.
-FORM: Customs declaration / bill of lading, candidate 6 of 7, seed ff1bfea2. Raises: hairline module density (JP high-density), state-by-mark-form (labanotation, emission rail), whole-cell record map (circle catalog). Signature: record-map inspection sweep + clearance stamp press.
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+THESIS: A migration workspace with a clear source-to-target path and evidence for every step.
+OWN-WORLD: User-confirmed Linear navigation and Supabase data controls. Neutral sidebar, white or charcoal content surfaces, teal actions, restrained borders, Archivo UI and Martian Mono evidence. Native forms and Lucide icons.
+STORY: Inspect the source, create a versioned plan, review evidence, approve, load and verify.
+FIRST VIEWPORT: Workspace rail beside a title and next action; source-to-target path above record status and a seven-step workflow. Operator identity, recent runs, new test and theme controls occupy a fixed bottom dock. On phones the name field and theme form the first dock row; runs and new test form the second. History opens above the whole dock and page padding preserves access to the last content.
+FORM: User-pinned Linear + Supabase, confirmed in this conversation; overrides direction roll 1211e87a. The user subsequently requested bottom controls.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+
+## Memorable moment
+
+The source and target read as one connected migration path. Each tested record remains an inspectable cell, with held records opening field-level evidence.
+
+## Unresolved decisions
+
+None.

@@ -179,6 +179,10 @@ test("overview shows inspection counts and opens held-record evidence", async ({
       path: `test-results/${name}-overview-inspected.png`,
       fullPage: true,
     });
+    await page.screenshot({
+      path: `test-results/${name}-overview-viewport.png`,
+      fullPage: false,
+    });
   }
 });
 

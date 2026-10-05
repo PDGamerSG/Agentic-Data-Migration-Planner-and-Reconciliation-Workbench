@@ -381,8 +381,118 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
       </a>
       <Rail view={view} />
       <div className="desk">
-        <header className="topbar">
-          <p className="topbar-path">
+        <main id="main" className="page">
+          <div className="title-band">
+            <div>
+              <h1>{title}</h1>
+              <p>{subtitle}</p>
+            </div>
+            {wb && <TitleActions wb={wb} />}
+          </div>
+          <div className="signals" aria-live="polite">
+            {error && (
+              <div className="signal error" role="alert">
+                <span>{error}</span>
+                <button
+                  className="icon-button"
+                  onClick={() => setError("")}
+                  aria-label="Dismiss error"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            {notice && (
+              <div className="signal notice" role="status">
+                <span>{notice}</span>
+                <button
+                  className="icon-button"
+                  onClick={() => setNotice("")}
+                  aria-label="Dismiss notification"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            {busy && (
+              <div className="signal working" role="status">
+                <Loader2 className="spin" size={16} aria-hidden="true" />
+                {busy}…
+              </div>
+            )}
+            {wb &&
+              !actor.trim() &&
+              view !== "overview" &&
+              view !== "history" &&
+              view !== "schemas" && (
+                <div className="signal hint">
+                  <span>
+                    Enter your name in the bottom bar to run, approve or load.
+                  </span>
+                </div>
+              )}
+          </div>
+          {!wb ? (
+            <div className="sheet">
+              {error ? (
+                <Empty
+                  title="Connect the database"
+                  description="Set the Neon connection string, apply the migrations and seed the bounded dataset. The source stays in PostgreSQL."
+                >
+                  <code className="setup-command">
+                    pnpm db:deploy && pnpm db:seed
+                  </code>
+                  <button
+                    className="button secondary"
+                    onClick={() => void refresh()}
+                  >
+                    Retry connection
+                  </button>
+                </Empty>
+              ) : (
+                <div className="loading-sheet" role="status">
+                  <Loader2 className="spin" size={18} aria-hidden="true" />
+                  Loading…
+                </div>
+              )}
+            </div>
+          ) : (
+            <WorkbenchContext.Provider value={wb}>
+              {children}
+              {modal === "approve" && (
+                <ApproveDialog
+                  onClose={() => setModal(null)}
+                  onDone={setNotice}
+                  act={act}
+                />
+              )}
+              {modal === "rollback" && (
+                <RollbackDialog
+                  onClose={() => setModal(null)}
+                  onDone={setNotice}
+                  act={act}
+                />
+              )}
+              {modal === "evidence" && evidence && run && (
+                <EvidenceDialog
+                  outcome={evidence}
+                  run={run}
+                  onClose={() => setModal(null)}
+                />
+              )}
+            </WorkbenchContext.Provider>
+          )}
+          <footer className="colophon">
+            <span>Manifest · migration workbench</span>
+            <span>Every record accounted for.</span>
+          </footer>
+        </main>
+        <footer className="operator-bar" aria-label="Operator controls">
+          <p className="operator-bar-path">
+            <span className="breadcrumb-workspace">CRM migration</span>
+            <span className="breadcrumb-divider" aria-hidden="true">
+              /
+            </span>
             <span>{section.label}</span>
           </p>
           <label className="operator">
@@ -390,7 +500,7 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
             <input
               aria-label="Operator name"
               value={actor}
-              placeholder="Needed to run or approve"
+              placeholder="Enter your name"
               onChange={(e) => {
                 setActor(e.target.value);
                 localStorage.setItem("manifest-operator", e.target.value);
@@ -498,112 +608,7 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
             Demo database
           </span>
           <ThemeToggle />
-        </header>
-        <main id="main" className="page">
-          <div className="title-band">
-            <div>
-              <h1>{title}</h1>
-              <p>{subtitle}</p>
-            </div>
-            {wb && <TitleActions wb={wb} />}
-          </div>
-          <div className="signals" aria-live="polite">
-            {error && (
-              <div className="signal error" role="alert">
-                <span>{error}</span>
-                <button
-                  className="icon-button"
-                  onClick={() => setError("")}
-                  aria-label="Dismiss error"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            )}
-            {notice && (
-              <div className="signal notice" role="status">
-                <span>{notice}</span>
-                <button
-                  className="icon-button"
-                  onClick={() => setNotice("")}
-                  aria-label="Dismiss notification"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            )}
-            {busy && (
-              <div className="signal working" role="status">
-                <Loader2 className="spin" size={16} aria-hidden="true" />
-                {busy}…
-              </div>
-            )}
-            {wb &&
-              !actor.trim() &&
-              view !== "overview" &&
-              view !== "history" &&
-              view !== "schemas" && (
-                <div className="signal hint">
-                  <span>
-                    Enter your name at the top to run, approve or load.
-                  </span>
-                </div>
-              )}
-          </div>
-          {!wb ? (
-            <div className="sheet">
-              {error ? (
-                <Empty
-                  title="Connect the database"
-                  description="Set the Neon connection string, apply the migrations and seed the bounded dataset. The source stays in PostgreSQL."
-                >
-                  <code className="setup-command">
-                    pnpm db:deploy && pnpm db:seed
-                  </code>
-                  <button
-                    className="button secondary"
-                    onClick={() => void refresh()}
-                  >
-                    Retry connection
-                  </button>
-                </Empty>
-              ) : (
-                <div className="loading-sheet" role="status">
-                  <Loader2 className="spin" size={18} aria-hidden="true" />
-                  Loading…
-                </div>
-              )}
-            </div>
-          ) : (
-            <WorkbenchContext.Provider value={wb}>
-              {children}
-              {modal === "approve" && (
-                <ApproveDialog
-                  onClose={() => setModal(null)}
-                  onDone={setNotice}
-                  act={act}
-                />
-              )}
-              {modal === "rollback" && (
-                <RollbackDialog
-                  onClose={() => setModal(null)}
-                  onDone={setNotice}
-                  act={act}
-                />
-              )}
-              {modal === "evidence" && evidence && run && (
-                <EvidenceDialog
-                  outcome={evidence}
-                  run={run}
-                  onClose={() => setModal(null)}
-                />
-              )}
-            </WorkbenchContext.Provider>
-          )}
-          <footer className="colophon">
-            <span>Manifest · migration workbench</span>
-          </footer>
-        </main>
+        </footer>
       </div>
     </div>
   );

@@ -12,6 +12,8 @@ import {
   Sparkles,
   Sun,
   Table2,
+  Layers3,
+  ShieldCheck,
 } from "lucide-react";
 
 export const navigation = [
@@ -77,32 +79,63 @@ export function Rail({ view }: { view: string }) {
   return (
     <aside className="rail">
       <Link href="/" className="wordmark" aria-label="Manifest overview">
-        <span className="wordmark-name">manifest</span>
-        <span className="wordmark-form">Migration workbench</span>
+        <span className="brand-symbol">
+          <Layers3 size={21} aria-hidden="true" />
+        </span>
+        <span className="brand-copy">
+          <span className="wordmark-name">manifest</span>
+          <span className="wordmark-form">Migration workbench</span>
+        </span>
       </Link>
+      <div className="workspace-label">
+        <span className="workspace-avatar" aria-hidden="true">
+          M
+        </span>
+        <div>
+          <strong>CRM migration</strong>
+          <span>Demo workspace</span>
+        </div>
+      </div>
       <nav aria-label="Main navigation" className="rail-nav">
         {navigation.map((n) => (
-          <Link
-            key={n.id}
-            href={n.href}
-            aria-label={n.label}
-            aria-current={view === n.id ? "page" : undefined}
-            className={`rail-link ${view === n.id ? "active" : ""}`}
-          >
-            <n.icon size={17} aria-hidden="true" />
-            <span className="rail-label">{n.label}</span>
-            <span className="rail-short" aria-hidden="true">
-              {n.short}
-            </span>
-          </Link>
+          <div className="nav-entry" key={n.id}>
+            {(n.id === "overview" ||
+              n.id === "schemas" ||
+              n.id === "history") && (
+              <p className="nav-group-label">
+                {n.id === "overview"
+                  ? "Workspace"
+                  : n.id === "schemas"
+                    ? "Migration"
+                    : "Monitor"}
+              </p>
+            )}
+            <Link
+              key={n.id}
+              href={n.href}
+              aria-label={n.label}
+              aria-current={view === n.id ? "page" : undefined}
+              className={`rail-link ${view === n.id ? "active" : ""}`}
+            >
+              <n.icon size={17} aria-hidden="true" />
+              <span className="rail-label">{n.label}</span>
+              <span className="rail-short" aria-hidden="true">
+                {n.short}
+              </span>
+            </Link>
+          </div>
         ))}
       </nav>
       <div className="rail-foot">
-        <p>
-          One source, one target
-          <br />
-          Up to 1,000 records
-        </p>
+        <ShieldCheck size={18} aria-hidden="true" />
+        <div>
+          <strong>Bounded by design</strong>
+          <p>
+            One source · one target
+            <br />
+            Up to 1,000 records
+          </p>
+        </div>
       </div>
     </aside>
   );

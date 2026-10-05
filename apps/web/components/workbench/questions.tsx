@@ -159,14 +159,16 @@ export function Questions() {
               id={inputId}
               aria-describedby={`${inputId}-why${help ? ` ${inputId}-choices` : ""}`}
               value={answers[q.id] ?? ""}
-              onChange={(e) =>
+              disabled={!!wb.busy || wb.runningSession}
+              onChange={(e) => {
+                const value = e.currentTarget.value;
                 setAnswers((a) => {
                   const next = { ...a };
-                  if (e.target.value) next[q.id] = e.target.value;
+                  if (value) next[q.id] = value;
                   else delete next[q.id];
                   return next;
-                })
-              }
+                });
+              }}
             >
               <option value="">Choose an answer…</option>
               {q.options.map((option) => (

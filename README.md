@@ -4,7 +4,7 @@
 
 The workbench preserves rejection evidence, proves that retries do not duplicate rows, reconciles the destination, and can roll back only the rows it owns.
 
-The interface uses numbered declaration fields, a record map and a routing slip to show the next migration step. Light and dark themes persist across navigation. [DESIGN.md](DESIGN.md) describes the interface, accessibility choices and verification.
+The interface takes inspiration from Linear's workspace navigation and Supabase's data controls. A connected source-to-target path, an inspectable record map and a steps list show the next migration action. Operator controls stay in a bottom bar, and light and dark themes persist across navigation. [DESIGN.md](DESIGN.md) describes the interface and accessibility choices.
 
 To change a screen, start with the [page editing guide](docs/pages.md). Each screen has its own route and UI files under `apps/web/app/(workbench)`.
 
