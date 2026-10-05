@@ -7,7 +7,7 @@ related_targets: []
 
 ## Scope
 
-Whole Manifest workbench web app (`apps/web`): login, overview, schemas, agent, plans, runs, target, history. Mode: Operate.
+Whole Manifest workbench web app (`apps/web`): overview, schemas, agent, plans, runs, target, history. Mode: Operate.
 
 ## Audience and task
 

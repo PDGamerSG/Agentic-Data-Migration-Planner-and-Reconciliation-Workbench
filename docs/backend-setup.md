@@ -10,13 +10,11 @@ Store these values in the ignored root `.env` for local operations, and as Verce
 | ----------------------- | ---------------------------------------------------------------- |
 | `DATABASE_URL`          | Neon pooled PostgreSQL connection string, with SSL required      |
 | `DIRECT_URL`            | Neon direct connection string for migration commands             |
-| `APP_ACCESS_CODE`       | Strong shared code for opening the public workbench              |
-| `SESSION_SECRET`        | Random secret of at least 32 characters for signed sessions      |
 | `GROQ_API_KEY`          | Optional model-backed planning; omit for the offline planner     |
 | `GROQ_MODEL`            | Optional; defaults to `openai/gpt-oss-120b`                      |
 | `ALLOW_FAULT_INJECTION` | `true` to demonstrate interruption and retry; otherwise disabled |
 
-Generate a session secret locally with `openssl rand -hex 32`. Keep it out of source control and browser-visible environment variables. No `NEXT_PUBLIC_*` secret is needed.
+Keep these values out of source control and browser-visible environment variables. No `NEXT_PUBLIC_*` secret is needed.
 
 Apply the schema and fixtures:
 
@@ -40,9 +38,9 @@ Import `PDGamerSG/Agentic-Data-Migration-Planner-and-Reconciliation-Workbench` i
 - `apps/web/vercel.json` sets workspace installation and build commands.
 - Add the environment variables above before deploying.
 
-Vercel deployments refuse access if `APP_ACCESS_CODE` is missing. Signed session cookies are HttpOnly and SameSite=Strict. The authentication endpoint also validates the request origin.
+The deployed workbench is open: anyone with the URL can view it and run actions. API mutations validate the request origin.
 
-Deploy after database preparation. Open the deployed URL, enter the access code, and complete the demo flow. API actions run in Node.js with a 60-second route budget. Agent inspections and model requests share a 48-second budget; a killed execution can be safely retried after its two-minute reservation expires.
+Deploy after database preparation. Open the deployed URL and complete the demo flow. API actions run in Node.js with a 60-second route budget. Agent inspections and model requests share a 48-second budget; a killed execution can be safely retried after its two-minute reservation expires.
 
 ## GitHub database workflow
 

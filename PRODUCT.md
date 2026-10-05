@@ -24,7 +24,7 @@ The agent proposes and a human signs. The agent can only inspect and test throug
 ## Operating Context
 
 - Single-operator web workbench. The operator types their name into the header, and that name is recorded on approvals, runs and rollbacks.
-- An access code protects the deployed instance (`/login`).
+- The deployed instance is open; there is no sign-in.
 - Data lives in Neon Postgres. The `public` schema holds the workbench and `target` is the mock destination.
 - The planner is Groq (`openai/gpt-oss-120b`), with a deterministic offline planner as fallback.
 - Interrupting an execution is a demo feature (`ALLOW_FAULT_INJECTION`). It stops the load after a committed batch so the operator can show a retry that skips the rows already loaded.

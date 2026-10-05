@@ -49,4 +49,4 @@ Rollback checks actual migrated content and refuses to remove edited records. It
 
 Audit writes occur inside the same transaction as their lifecycle mutations. Audit UPDATE, DELETE and TRUNCATE are rejected by triggers. This is application-level immutability under the deployed role; a PostgreSQL owner who can drop tables or disable triggers is still an administrator.
 
-The access-code session protects all workbench pages and API reads/writes. Origin checks reject cross-site mutations. The access code and session secret stay on the server. Source values and model text are rendered as ordinary React text. No untrusted HTML or arbitrary transform code is evaluated.
+The workbench is an open shared demo with no sign-in. Origin checks reject cross-site mutations. Source values and model text are rendered as ordinary React text. No untrusted HTML or arbitrary transform code is evaluated.

@@ -60,7 +60,7 @@ The default decisions produce **250 source / 234 transformed / 212 accepted / 38
 - **Maximum sample:** 1,000 records; the committed fixture has 250.
 - **Transforms:** a closed, validated catalog. No arbitrary code, live connectors or production database migration.
 - **Data ingestion:** the committed bounded fixture. A public upload workflow is outside this implementation.
-- **Access:** one shared demo workspace, protected by an optional access code locally and a required access code on Vercel. Operator names are recorded labels, not verified personal identities.
+- **Access:** one shared, open demo workspace with no sign-in. Operator names are recorded labels, not verified personal identities.
 
 ## Stack and layout
 
@@ -105,6 +105,6 @@ Browser tests run a production server on port 3100. They create real plans, appr
 
 ## Deploy
 
-[Neon and Vercel setup](docs/backend-setup.md) covers environment variables, migrations, the access code and the deployment order. No cloud credentials are committed. The Neon database is prepared; Vercel deployment awaits environment configuration.
+[Neon and Vercel setup](docs/backend-setup.md) covers environment variables, migrations and the deployment order. No cloud credentials are committed. The Neon database is prepared; Vercel deployment awaits environment configuration.
 
 Read [architecture](docs/architecture.md), [implementation decisions](docs/decisions.md), and [the demo script](docs/demo-script.md) for the invariants and verification walkthrough. [PLAN.md](PLAN.md) contains the original design; the README and implementation notes describe the shipped scope and any changes from that plan.

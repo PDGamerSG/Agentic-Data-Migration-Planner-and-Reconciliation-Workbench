@@ -2642,53 +2642,6 @@ p.clearance-signed {
   color: var(--form);
 }
 
-/* ---------- Login ---------- */
-
-.login {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background:
-    linear-gradient(var(--rail), var(--rail)) left / clamp(14px, 4vw, 64px) 100%
-      no-repeat,
-    var(--ground);
-}
-.login-form {
-  width: min(460px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 28px;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  box-shadow: var(--shadow);
-}
-.login-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding-bottom: 14px;
-  border-bottom: 2px solid var(--form);
-  color: var(--form-strong);
-}
-.login-head .mono {
-  color: var(--muted);
-}
-.login h1 {
-  font-size: 24px;
-  font-weight: 760;
-  font-stretch: 112%;
-  letter-spacing: -0.015em;
-  color: var(--form-strong);
-}
-.login p {
-  color: var(--ink-2);
-}
-.login .box code {
-  font-size: 12px;
-}
-
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1180px) {
@@ -3007,8 +2960,7 @@ p.clearance-signed {
 .sheet,
 .form-grid.standalone,
 .destination,
-.clearance,
-.login-form {
+.clearance {
   box-shadow: none;
 }
 .title-band {
@@ -3074,10 +3026,6 @@ p.clearance-signed {
 }
 .copy.active .copy-version {
   color: var(--form-strong);
-}
-
-.login {
-  background: var(--ground);
 }
 
 @media (max-width: 900px) {
