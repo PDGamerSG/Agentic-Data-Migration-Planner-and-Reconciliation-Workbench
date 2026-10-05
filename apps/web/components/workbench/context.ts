@@ -29,6 +29,7 @@ export type Workbench = {
   setFault: (on: boolean) => void;
   choosePlan: (id: string) => void;
   draft: () => void;
+  startTest: () => void;
   dry: () => void;
   execute: () => void;
   retry: (planId: string) => void;

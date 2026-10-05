@@ -1,18 +1,35 @@
 "use client";
 import Link from "next/link";
 import { ArrowRight, Check, Loader2, X } from "lucide-react";
+import { Questions } from "@/components/workbench/questions";
 import { useWorkbench } from "@/components/workbench/context";
 import { Box, Empty, Mark, Sheet, words } from "@/components/workbench/ui";
 
 export function Agent() {
   const wb = useWorkbench();
-  const { state, plan, answers, setAnswers } = wb;
-  const session = state.sessions[0];
+  const { state, plan, answers } = wb;
+  const session = plan
+    ? state.sessions.find((s) => s.id === plan.agentSessionId)
+    : state.sessions[0];
   const answered = plan
     ? plan.proposal.questions.filter((q) => answers[q.id]).length
     : 0;
   return (
     <>
+      {plan && (
+        <div className="planner-context">
+          <div>
+            <strong>Test questions · plan version {plan.version}</strong>
+            <span>
+              Saved by {plan.authorName}. You're working on this version's
+              decisions.
+            </span>
+          </div>
+          <Link href="/tests" className="text-link">
+            Browse previous tests <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+        </div>
+      )}
       <div className="form-grid three standalone">
         <Box label="AI model">
           <span className="value-strong">
@@ -22,14 +39,18 @@ export function Agent() {
           </span>
           <small>Reads and tests data. Cannot change anything.</small>
         </Box>
-        <Box label="Last run">
+        <Box label="This plan’s AI checks">
           {session ? (
             <Mark status={session.status} />
           ) : (
             <span className="value-strong">Not started</span>
           )}
           <small>
-            {session ? `${session.calls.length} checks` : "Start it above"}
+            {session
+              ? `${session.calls.length} checks`
+              : plan
+                ? "Earlier inspection"
+                : "Start a new test above"}
           </small>
         </Box>
         <Box label="Questions answered">
@@ -41,6 +62,9 @@ export function Agent() {
       </div>
 
       <div className="split agent-split">
+        <Sheet title="Questions for you" id="decisions-heading">
+          <Questions />
+        </Sheet>
         <Sheet
           title="What the AI checked"
           id="log-heading"
@@ -52,8 +76,12 @@ export function Agent() {
         >
           {!session ? (
             <Empty
-              title="No AI run yet"
-              description="The AI reads the data and tests each field before it suggests a plan."
+              title={plan ? "Earlier inspection" : "No AI run yet"}
+              description={
+                plan
+                  ? "Detailed tool logs are shown for the five most recent AI sessions. This version’s saved questions and proposal remain available in this test."
+                  : "The AI reads the data and tests each field before it suggests a plan."
+              }
             />
           ) : (
             <ol className="tool-log">
@@ -103,56 +131,6 @@ export function Agent() {
               )}
               {session.error && <li className="tool-error">{session.error}</li>}
             </ol>
-          )}
-        </Sheet>
-
-        <Sheet title="Questions for you" id="decisions-heading">
-          {!plan ? (
-            <Empty
-              title="No questions yet"
-              description="The AI asks when the data alone can't decide, such as an unclear date format."
-            />
-          ) : (
-            <div className="decisions">
-              {plan.proposal.questions.map((q, i) => (
-                <label
-                  key={q.id}
-                  className={`decision ${answers[q.id] ? "answered" : ""}`}
-                >
-                  <span className="decision-no mono">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="decision-text">
-                    <strong>{q.question}</strong>
-                    <small>{q.why}</small>
-                  </span>
-                  <select
-                    aria-label={q.question}
-                    value={answers[q.id] ?? ""}
-                    onChange={(e) =>
-                      setAnswers((a) => ({ ...a, [q.id]: e.target.value }))
-                    }
-                  >
-                    <option value="">Choose…</option>
-                    {q.options.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-              <div className="decisions-foot">
-                <button
-                  className="button primary full"
-                  onClick={wb.draft}
-                  disabled={!!wb.busy || wb.runningSession}
-                >
-                  Update plan with answers
-                </button>
-                <p>Saves a new plan version.</p>
-              </div>
-            </div>
           )}
         </Sheet>
       </div>

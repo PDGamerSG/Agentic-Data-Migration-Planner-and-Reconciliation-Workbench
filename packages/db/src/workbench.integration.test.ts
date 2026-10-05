@@ -35,6 +35,33 @@ describe.skipIf(!db)("Postgres migration lifecycle", () => {
   afterAll(async () => {
     await db!.$disconnect();
   });
+  it("attributes independent tests and answer revisions to their operators", async () => {
+    const first = await wb!.createSession({}, undefined, "  Alice  ");
+    await wb!.processSession(first.id);
+    const original = (await wb!.state()).plans[0]!;
+    expect(original.authorName).toBe("Alice");
+    expect(original.parentId).toBeNull();
+    const revision = await wb!.createSession(decisions, original.id, "Bob");
+    await wb!.processSession(revision.id, original.id);
+    const updated = (await wb!.state()).plans[0]!;
+    expect(updated.authorName).toBe("Bob");
+    expect(updated.parentId).toBe(original.id);
+    expect(updated.answers).toEqual(decisions);
+    const fresh = await wb!.createSession({}, undefined, "Bob");
+    await wb!.processSession(fresh.id);
+    const state = await wb!.state();
+    expect(state.plans[0]!.parentId).toBeNull();
+    expect(state.plans[0]!.answers).toEqual({});
+    const namedUser = await wb!.createSession({}, undefined, "user");
+    await wb!.processSession(namedUser.id);
+    expect((await wb!.state()).plans[0]!.authorName).toBe("user");
+    expect(state.plans.find((p) => p.id === original.id)!.answers).toEqual({});
+    expect(
+      state.history.find(
+        (e) => e.entityId === first.id && e.type === "agent_session_started",
+      )!.actor,
+    ).toBe("Alice");
+  });
   it("enforces approval and immutable plan history", async () => {
     const s = await wb!.createSession({});
     await wb!.processSession(s.id);
@@ -227,5 +254,19 @@ describe.skipIf(!db)("Postgres migration lifecycle", () => {
       "Recovery operator",
       "Concurrent lifecycle test complete",
     );
+  });
+  it("keeps older runs discoverable after more than twenty newer results", async () => {
+    const plan = (await wb!.state()).plans[0]!;
+    const first = await wb!.dryRun(plan.id, "History operator");
+    for (let i = 0; i < 20; i++) await wb!.dryRun(plan.id, "History operator");
+    const summary = (await wb!.state()).runs.find((r) => r.id === first.id)!;
+    expect(summary).toMatchObject({
+      counts: first.result.counts,
+      resultHash: first.result.resultHash,
+      startedBy: "History operator",
+      planVersionId: plan.id,
+    });
+    expect(summary).not.toHaveProperty("result");
+    expect((await wb!.getRun(first.id)).startedBy).toBe("History operator");
   });
 });

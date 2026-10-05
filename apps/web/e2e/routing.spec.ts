@@ -3,6 +3,7 @@ import type { WorkbenchState } from "@manifest/db";
 
 const pages = [
   ["/", "Overview", "Migration overview"],
+  ["/tests", "Test library", "Test library"],
   ["/schemas", "Source data", "Source data"],
   ["/agent", "AI planner", "AI planner"],
   ["/plans", "Plan", "Plan"],

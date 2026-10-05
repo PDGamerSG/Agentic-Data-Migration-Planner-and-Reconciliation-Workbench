@@ -43,6 +43,8 @@ async function fixture(request: APIRequestContext) {
     status: inspection.status,
     counts: result.counts,
     resultHash: result.resultHash,
+    startedBy: "Test operator",
+    startedAt: "2026-10-01T12:00:00.000Z",
   };
   return {
     state: {

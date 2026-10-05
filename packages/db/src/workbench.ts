@@ -62,6 +62,10 @@ const groqKeys = () =>
     .filter(Boolean);
 const LOCK = 730031;
 export type RunView = Omit<Run, "result"> & { result: RunResult };
+type SavedRunSummary = Omit<Run, "result"> & {
+  counts: RunResult["counts"];
+  resultHash: string;
+};
 const runView = (run: Run): RunView => ({
   ...run,
   result: run.result as unknown as RunResult,
@@ -152,7 +156,17 @@ export class Workbench {
         orderBy: { version: "desc" },
         include: { approvals: true },
       }),
-      this.db.run.findMany({ orderBy: { startedAt: "desc" }, take: 20 }),
+      // Keep every run discoverable without loading record payloads and traces
+      // into each state response. Detailed evidence stays behind getRun.
+      this.db.$queryRaw<SavedRunSummary[]>`
+        SELECT "id", "kind", "planVersionId", "specHash", "datasetHash",
+          "targetKeysHash", "lineageId", "attempt", "retryOfId", "idempotencyKey",
+          "status", "baselineCount", "insertedCount", "skippedExisting",
+          "batchesCommitted", "error", "startedBy", "startedAt", "updatedAt",
+          "finishedAt", "result"->'counts' AS "counts",
+          "result"->>'resultHash' AS "resultHash"
+        FROM "Run" ORDER BY "startedAt" DESC
+      `,
       targetRows(this.db),
       this.db.auditEvent.findMany({ orderBy: { id: "desc" }, take: 150 }),
       this.db.agentSession.findMany({
@@ -189,14 +203,7 @@ export class Workbench {
               )
             : null,
       })),
-      runs: runs.map((r) => {
-        const { result, ...rest } = runView(r);
-        return {
-          ...rest,
-          counts: result.counts,
-          resultHash: result.resultHash,
-        };
-      }),
+      runs,
       target,
       history,
       sessions,
@@ -278,7 +285,12 @@ export class Workbench {
       return p;
     });
   }
-  async createSession(answers: Record<string, string>, basePlanId?: string) {
+  async createSession(
+    answers: Record<string, string>,
+    basePlanId?: string,
+    startedBy?: string,
+  ) {
+    const actor = requireName(startedBy ?? "user");
     const valid = answersSchema.parse(answers);
     if (basePlanId) await this.plan(this.db, basePlanId);
     const recent = await this.db.agentSession.count({
@@ -302,8 +314,10 @@ export class Workbench {
           answers: json(valid),
         },
       });
-      await audit(tx, "agent_session_started", "user", session.id, {
+      await audit(tx, "agent_session_started", actor, session.id, {
         provider: session.provider,
+        basePlanId: basePlanId ?? null,
+        startedBy: startedBy === undefined ? null : actor,
       });
       return session;
     });
@@ -315,6 +329,15 @@ export class Workbench {
     let seq = 0;
     try {
       const dataset = await this.dataset();
+      const started = await this.db.auditEvent.findFirst({
+        where: { type: "agent_session_started", entityId: sessionId },
+      });
+      const namedOperator =
+        started &&
+        typeof started.payload === "object" &&
+        started.payload !== null &&
+        "startedBy" in started.payload &&
+        typeof started.payload.startedBy === "string";
       const parent = basePlanId ? await this.plan(this.db, basePlanId) : null;
       const onCall = async (call: ToolCallRecord) => {
         await this.db.$transaction(async (tx) => {
@@ -350,8 +373,11 @@ export class Workbench {
       const plan = await this.savePlan({
         parentId: basePlanId,
         spec: proposal.spec,
-        authorName:
-          session.provider === "offline" ? "Offline planner" : "Groq planner",
+        authorName: namedOperator
+          ? started.actor
+          : session.provider === "offline"
+            ? "Offline planner"
+            : "Groq planner",
         changeSummary: basePlanId
           ? "Re-drafted with clarification answers"
           : "Initial migration proposal",

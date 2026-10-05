@@ -14,6 +14,7 @@ const schemas = {
     .object({
       answers: answersSchema.default({}),
       basePlanId: identifier.optional(),
+      startedBy: actor.optional(),
     })
     .strict(),
   plans: z
@@ -142,7 +143,11 @@ export async function POST(
     switch (action) {
       case "agent": {
         const v = schemas.agent.parse(body);
-        const session = await wb.createSession(v.answers, v.basePlanId);
+        const session = await wb.createSession(
+          v.answers,
+          v.basePlanId,
+          v.startedBy,
+        );
         after(() => wb.processSession(session.id, v.basePlanId));
         result = session;
         break;

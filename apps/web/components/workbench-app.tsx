@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Loader2, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Loader2, Plus, X } from "lucide-react";
 import type { RunView, WorkbenchState } from "@manifest/db";
 import type { PlanSpec, RecordOutcome } from "@manifest/core";
 import { WorkbenchContext, type Workbench } from "./workbench/context";
@@ -13,7 +13,7 @@ import {
   openDecisions,
 } from "./workbench/lifecycle";
 import { Rail, ThemeToggle, navigation } from "./workbench/shell";
-import { Empty } from "./workbench/ui";
+import { Empty, time } from "./workbench/ui";
 import {
   ApproveDialog,
   EvidenceDialog,
@@ -21,6 +21,10 @@ import {
 } from "./workbench/dialogs";
 
 const titles: Record<string, [string, string]> = {
+  tests: [
+    "Test library",
+    "Start a database test, continue your questions, or explore the team's previous results.",
+  ],
   overview: [
     "Migration overview",
     "Move old CRM customers into the new customer table, one step at a time.",
@@ -85,6 +89,8 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
   const [evidence, setEvidence] = useState<RecordOutcome | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [fault, setFault] = useState(false);
+  const [pendingSession, setPendingSession] = useState<string>();
+  const [pendingFresh, setPendingFresh] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -112,12 +118,40 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [runningSession, refresh]);
 
+  const focusedId =
+    view === "target"
+      ? chosenPlan
+      : view === "runs" && selectedId
+        ? state?.runs.find((r) => r.id === selectedId)?.planVersionId
+        : selectedId;
   const plan =
-    state?.plans.find(
-      (p) => p.id === (view === "target" ? chosenPlan : selectedId),
-    ) ??
-    (view === "target" ? state?.plans.find((p) => p.approval) : undefined) ??
-    state?.plans[0];
+    pendingFresh && view === "agent" && !selectedId
+      ? undefined
+      : focusedId
+        ? state?.plans.find((p) => p.id === focusedId)
+        : ((view === "target"
+            ? state?.plans.find((p) => p.approval)
+            : undefined) ?? state?.plans[0]);
+
+  useEffect(() => {
+    if (!pendingSession || !state) return;
+    const created = state.plans.find(
+      (p) => p.agentSessionId === pendingSession,
+    );
+    const session = state.sessions.find((s) => s.id === pendingSession);
+    if (created) {
+      setPendingSession(undefined);
+      setPendingFresh(false);
+      router.push(`/agent/${created.id}`);
+      setNotice(
+        `Plan version ${created.version} is ready. Review its questions before a dry run.`,
+      );
+    } else if (session?.status === "failed") {
+      setPendingSession(undefined);
+      setPendingFresh(false);
+      setError(session.error || "The planner failed. Start the test again.");
+    }
+  }, [pendingSession, state, router]);
 
   const runId =
     view === "runs" && selectedId
@@ -183,6 +217,33 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
     } finally {
       setBusy("");
     }
+  };
+
+  const startPlanner = (fresh: boolean) => {
+    if (busy || runningSession || !actor.trim()) return;
+    void act<{ id: string }>(
+      "Starting AI planner",
+      "agent",
+      {
+        startedBy: actor,
+        answers: fresh
+          ? {}
+          : Object.fromEntries(
+              Object.entries(answers).filter(([, value]) => value),
+            ),
+        ...(!fresh && plan ? { basePlanId: plan.id } : {}),
+      },
+      (session) => {
+        setPendingSession(session.id);
+        setPendingFresh(fresh);
+        setNotice(
+          fresh
+            ? "New test started. The planner will prepare fresh questions for this dataset."
+            : "Updating your selected plan with these answers.",
+        );
+        if (fresh) router.push("/agent");
+      },
+    );
   };
 
   const stages = useMemo(() => (state ? lifecycle(state) : null), [state]);
@@ -258,16 +319,8 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
       choosePlan: setChosenPlan,
       navigate: (href) => router.push(href),
       fail: setError,
-      draft: () =>
-        void act<{ id: string }>(
-          "Starting AI planner",
-          "agent",
-          { answers, basePlanId: plan?.id },
-          () => {
-            setNotice("AI planner started.");
-            router.push("/agent");
-          },
-        ),
+      draft: () => startPlanner(false),
+      startTest: () => startPlanner(true),
       dry: () =>
         plan &&
         void act<RunView>(
@@ -345,6 +398,98 @@ export function WorkbenchApp({ children }: { children: React.ReactNode }) {
               maxLength={100}
             />
           </label>
+          {wb && (
+            <details className="operator-history" key={actor}>
+              <summary>
+                Your runs{" "}
+                <span className="mono">
+                  {
+                    state!.runs.filter(
+                      (r) =>
+                        r.startedBy.trim().toLowerCase() ===
+                        actor.trim().toLowerCase(),
+                    ).length
+                  }
+                </span>
+                <ChevronDown size={14} aria-hidden="true" />
+              </summary>
+              <div className="operator-menu">
+                <strong>
+                  {actor.trim()
+                    ? `Recent runs by ${actor.trim()}`
+                    : "Your previous runs"}
+                </strong>
+                {state!.runs
+                  .filter(
+                    (r) =>
+                      actor.trim() &&
+                      r.startedBy.trim().toLowerCase() ===
+                        actor.trim().toLowerCase(),
+                  )
+                  .slice(0, 3)
+                  .map((r) => (
+                    <Link
+                      key={r.id}
+                      href={`/runs/${r.id}`}
+                      onClick={(e) =>
+                        e.currentTarget
+                          .closest("details")
+                          ?.removeAttribute("open")
+                      }
+                    >
+                      <span>
+                        {r.kind === "dry_run" ? "Dry run" : "Load"} · v
+                        {
+                          state!.plans.find((p) => p.id === r.planVersionId)
+                            ?.version
+                        }
+                      </span>
+                      <small>
+                        {time(r.startedAt)} · {r.counts.accepted} accepted ·{" "}
+                        {r.counts.rejected} held
+                      </small>
+                    </Link>
+                  ))}
+                {!state!.runs.some(
+                  (r) =>
+                    actor.trim() &&
+                    r.startedBy.trim().toLowerCase() ===
+                      actor.trim().toLowerCase(),
+                ) && (
+                  <p>
+                    {actor.trim()
+                      ? "No runs under this name yet. Start a test and run a dry run to see it here."
+                      : "Enter the name you used on earlier runs to find them."}
+                  </p>
+                )}
+                <Link
+                  className="text-link"
+                  href="/tests"
+                  onClick={(e) =>
+                    e.currentTarget.closest("details")?.removeAttribute("open")
+                  }
+                >
+                  Browse test library{" "}
+                  <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+              </div>
+            </details>
+          )}
+          {wb && (
+            <button
+              className="button secondary new-test"
+              onClick={wb.startTest}
+              disabled={!!busy || runningSession || !actor.trim()}
+              title={
+                !actor.trim()
+                  ? "Enter your name to start a test"
+                  : "Start with fresh answers on the demo dataset"
+              }
+            >
+              <Plus size={15} aria-hidden="true" />
+              New test
+            </button>
+          )}
           <span
             className="environment"
             title="Data is written to a demo table in PostgreSQL"
@@ -471,7 +616,7 @@ function TitleActions({ wb }: { wb: Workbench }) {
     <button
       className="button primary"
       onClick={wb.draft}
-      disabled={!!wb.busy || wb.runningSession}
+      disabled={!!wb.busy || wb.runningSession || !wb.actor.trim()}
     >
       {wb.runningSession ? "AI planner running…" : "Create plan with AI"}
     </button>

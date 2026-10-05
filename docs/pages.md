@@ -9,6 +9,7 @@ Every screen has its own folder in `apps/web/app/(workbench)`.
 | Screen        | URL        | Route file                                  | UI file                                     |
 | ------------- | ---------- | ------------------------------------------- | ------------------------------------------- |
 | Overview      | `/`        | `apps/web/app/(workbench)/page.tsx`         | `apps/web/app/(workbench)/view.tsx`         |
+| Test library  | `/tests`   | `apps/web/app/(workbench)/tests/page.tsx`   | `apps/web/app/(workbench)/tests/view.tsx`   |
 | Source data   | `/schemas` | `apps/web/app/(workbench)/schemas/page.tsx` | `apps/web/app/(workbench)/schemas/view.tsx` |
 | AI planner    | `/agent`   | `apps/web/app/(workbench)/agent/page.tsx`   | `apps/web/app/(workbench)/agent/view.tsx`   |
 | Plan          | `/plans`   | `apps/web/app/(workbench)/plans/page.tsx`   | `apps/web/app/(workbench)/plans/view.tsx`   |
@@ -19,6 +20,10 @@ Every screen has its own folder in `apps/web/app/(workbench)`.
 For example, to change the homepage's Record status section, open `apps/web/app/(workbench)/view.tsx`. To change the source-data table, open `apps/web/app/(workbench)/schemas/view.tsx`.
 
 ## Plan and run detail pages
+
+`apps/web/app/(workbench)/agent/[planId]/page.tsx` handles `/agent/<plan ID>` so older tests reopen their own saved questions. Updating answers creates a new child version attributed to the operator. New test starts an independent plan with empty answers on the same bounded dataset.
+
+The test library groups each initial plan and its revisions. My tests matches the entered name against version authors and run operators. Names are activity labels, not authenticated accounts. The header's Your runs menu links to that name's recent results; the library exposes the full persisted run history.
 
 `apps/web/app/(workbench)/plans/[planId]/page.tsx` handles `/plans/<plan ID>`.
 
@@ -37,6 +42,7 @@ Square brackets mean that part of the URL changes. These detail pages reuse thei
 | Data loading and migration actions           | `apps/web/components/workbench-app.tsx`                     |
 | Values and actions available to every screen | `apps/web/components/workbench/context.ts`                  |
 | Shared section, button and dialog components | `apps/web/components/workbench/ui.tsx`                      |
+| Question examples and answer guidance        | `apps/web/components/workbench/questions.tsx`               |
 | Colors, spacing, typography and phone layout | `apps/web/app/globals.css`                                  |
 | API endpoints                                | `apps/web/app/api/[...path]/route.ts`                       |
 
@@ -56,4 +62,4 @@ pnpm test
 pnpm build
 ```
 
-Browser coverage in `apps/web/e2e/routing.spec.ts` checks all seven screens, direct links, refreshes, selected plan/run IDs, and browser history. Run browser and PostgreSQL checks against a dedicated local test database, as described in the README.
+Browser coverage in `apps/web/e2e/routing.spec.ts` checks all eight screens, direct links, refreshes, selected plan/run IDs, and browser history. `tests.spec.ts` covers ownership filters, older questions, and fresh-test isolation. Run browser and PostgreSQL checks against a dedicated local test database, as described in the README.

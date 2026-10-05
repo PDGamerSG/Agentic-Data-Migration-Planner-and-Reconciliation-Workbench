@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "project": {
+    "name": "agentic-data-migration-planner-and-reconciliation-workbench",
+    "productType": "Bounded migration workbench",
+    "stack": ["Next.js App Router", "React", "TypeScript", "CSS variables"]
+  },
+  "sources": {
+    "tokens": ["apps/web/app/globals.css"],
+    "components": [
+      "apps/web/components/workbench/ui.tsx",
+      "apps/web/components/workbench/shell.tsx"
+    ],
+    "assets": [],
+    "instructions": ["DESIGN.md", "PRODUCT.md", "AGENTS.md"]
+  },
+  "design": {
+    "colorMode": "light and dark",
+    "colors": {},
+    "typography": {
+      "sans": "Archivo",
+      "mono": "Martian Mono"
+    },
+    "spacing": {},
+    "radius": {},
+    "shadows": {},
+    "motion": {},
+    "density": "compact document surfaces"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [
+      "Sheet",
+      "Box",
+      "Mark",
+      "Empty",
+      "Dialog",
+      "native form controls",
+      "Lucide icons"
+    ],
+    "patterns": [
+      "Ruled document sections",
+      "versioned plans",
+      "expandable audit evidence"
+    ]
+  },
+  "constraints": {
+    "must": [
+      "Preserve one source, one target and the 1,000-record limit",
+      "Create immutable plan versions",
+      "Use existing CSS tokens and primitives",
+      "Show keyboard focus and responsive layouts"
+    ],
+    "avoid": [
+      "Arbitrary transform code",
+      "Unrequested database connectors",
+      "Decorative gradients and bitmap illustrations"
+    ]
+  },
+  "decisions": [],
+  "evidence": [
+    {
+      "fact": "project.instructions",
+      "source": "AGENTS.md"
+    },
+    {
+      "fact": "project.instructions",
+      "source": "DESIGN.md"
+    },
+    {
+      "fact": "project.instructions",
+      "source": "PRODUCT.md"
+    }
+  ]
+}

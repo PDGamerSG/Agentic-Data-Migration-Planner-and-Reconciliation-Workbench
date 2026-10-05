@@ -7,6 +7,7 @@ import {
   GitBranch,
   History,
   LayoutGrid,
+  FolderOpen,
   Moon,
   Sparkles,
   Sun,
@@ -20,6 +21,13 @@ export const navigation = [
     label: "Overview",
     short: "Overview",
     icon: LayoutGrid,
+  },
+  {
+    id: "tests",
+    href: "/tests",
+    label: "Test library",
+    short: "Tests",
+    icon: FolderOpen,
   },
   {
     id: "schemas",
