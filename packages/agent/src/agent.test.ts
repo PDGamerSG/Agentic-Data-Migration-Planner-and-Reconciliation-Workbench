@@ -187,6 +187,7 @@ describe("model tool loop", () => {
         records: [],
         answers: {},
         apiKey: "test",
+        fallbackModel: null,
         onCall: async () => {},
         fetcher: async () => {
           requests++;
@@ -448,6 +449,7 @@ describe("model tool loop", () => {
           records: [],
           answers: {},
           apiKey: "test",
+          fallbackModel: null,
           onCall: async () => {},
           fetcher: async () => {
             attempts++;
@@ -516,6 +518,7 @@ describe("model tool loop", () => {
         records: [],
         answers: {},
         apiKeys: ["key-a", "key-b"],
+        fallbackModel: null,
         onCall: async () => {},
         fetcher: async (_url, init) => {
           used.push(new Headers(init?.headers).get("authorization")!);
@@ -528,6 +531,101 @@ describe("model tool loop", () => {
     ).rejects.toThrow("rate limit reached on all 2 keys");
     // Two keys per round, one first round plus two bounded waits.
     expect(used).toHaveLength(6);
+  });
+
+  it("uses a second Groq model when the primary token allowance is exhausted", async () => {
+    const offline = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      onCall: async () => {},
+    });
+    const { measured: _measured, ...proposal } = offline;
+    const models: string[] = [];
+    const changed: string[] = [];
+    const result = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      apiKey: "test",
+      onCall: async () => {},
+      onModelChange: async (model) => {
+        changed.push(model);
+      },
+      fetcher: async (_url, init) => {
+        const sent = JSON.parse(String(init?.body));
+        models.push(sent.model);
+        if (models.length === 1)
+          return new Response("", {
+            status: 429,
+            headers: { "retry-after": "60" },
+          });
+        expect(
+          sent.tools.map(
+            (tool: { function: { name: string } }) => tool.function.name,
+          ),
+        ).toEqual(["submit_proposal"]);
+        return Response.json({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: "proposal",
+                    type: "function",
+                    function: {
+                      name: "submit_proposal",
+                      arguments: JSON.stringify(proposal),
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    });
+    expect(models).toEqual(["openai/gpt-oss-120b", "openai/gpt-oss-20b"]);
+    expect(changed).toEqual(["openai/gpt-oss-20b"]);
+    expect(result.spec).toEqual(proposal.spec);
+  });
+
+  it("bounds model handoff and reports rate limits when both models are exhausted", async () => {
+    const models: string[] = [];
+    await expect(
+      runAgent({
+        records: [],
+        answers: {},
+        apiKey: "test",
+        onCall: async () => {},
+        fetcher: async (_url, init) => {
+          models.push(JSON.parse(String(init?.body)).model);
+          return new Response("", {
+            status: 429,
+            headers: { "retry-after": "60" },
+          });
+        },
+      }),
+    ).rejects.toThrow("rate limit reached");
+    expect(models).toEqual(["openai/gpt-oss-120b", "openai/gpt-oss-20b"]);
+  });
+
+  it("does not replace a custom model unless a fallback is configured", async () => {
+    const models: string[] = [];
+    await expect(
+      runAgent({
+        records: [],
+        answers: {},
+        apiKey: "test",
+        model: "custom-model",
+        onCall: async () => {},
+        fetcher: async (_url, init) => {
+          models.push(JSON.parse(String(init?.body)).model);
+          return new Response("", { status: 429 });
+        },
+      }),
+    ).rejects.toThrow("rate limit reached");
+    expect(models).toEqual(["custom-model"]);
   });
   it("skips a rejected key and spreads sessions across keys", async () => {
     const firsts: string[] = [];

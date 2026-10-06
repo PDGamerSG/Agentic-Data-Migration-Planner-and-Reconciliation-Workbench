@@ -369,6 +369,22 @@ export class Workbench {
         onCall,
         apiKeys: groqKeys(),
         model: process.env.GROQ_MODEL,
+        fallbackModel:
+          process.env.GROQ_FALLBACK_MODEL === undefined
+            ? undefined
+            : process.env.GROQ_FALLBACK_MODEL || null,
+        onModelChange: async (model) => {
+          await this.db.$transaction(async (tx) => {
+            await tx.agentSession.update({
+              where: { id: sessionId },
+              data: { model },
+            });
+            await audit(tx, "agent_model_changed", "agent", sessionId, {
+              model,
+              reason: "provider_rate_limit",
+            });
+          });
+        },
       });
       const plan = await this.savePlan({
         parentId: basePlanId,

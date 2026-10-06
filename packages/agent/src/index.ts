@@ -360,6 +360,9 @@ export async function runAgent(input: {
   /** Several Groq keys: a rate-limited or rejected key hands over to the next one. */
   apiKeys?: string[];
   model?: string;
+  /** A second Groq model can use a separate token allowance; null disables it. */
+  fallbackModel?: string | null;
+  onModelChange?: (model: string) => Promise<void>;
   fetcher?: typeof fetch;
   signal?: AbortSignal;
 }): Promise<Proposal> {
@@ -458,6 +461,14 @@ export async function runAgent(input: {
       },
     ];
     const fetcher = input.fetcher ?? fetch;
+    let model = input.model ?? "openai/gpt-oss-120b";
+    const fallbackModel =
+      input.fallbackModel === undefined
+        ? model === "openai/gpt-oss-120b"
+          ? "openai/gpt-oss-20b"
+          : null
+        : input.fallbackModel;
+    let usedFallback = false;
     let current = keyCursor++ % keys.length;
     let validateReturnedCalls = false;
     for (let turn = 0; turn < 12 && !tools.proposal; turn++) {
@@ -483,7 +494,7 @@ export async function runAgent(input: {
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                  model: input.model ?? "openai/gpt-oss-120b",
+                  model,
                   messages,
                   tools: tools.specs.filter(
                     (tool) => tool.function.name === "submit_proposal",
@@ -567,6 +578,28 @@ export async function runAgent(input: {
           await response.body?.cancel();
           current = (current + 1) % keys.length;
           tried++;
+          response = await request();
+          continue;
+        }
+        if (
+          response.status === 429 &&
+          fallbackModel &&
+          fallbackModel !== model &&
+          !usedFallback
+        ) {
+          await response.body?.cancel();
+          model = fallbackModel;
+          usedFallback = true;
+          await input.onModelChange?.(model);
+          console.warn(
+            JSON.stringify({
+              event: "agent_model_rate_limit_fallback",
+              provider: "groq",
+              model,
+            }),
+          );
+          tried = 1;
+          waits = 0;
           response = await request();
           continue;
         }

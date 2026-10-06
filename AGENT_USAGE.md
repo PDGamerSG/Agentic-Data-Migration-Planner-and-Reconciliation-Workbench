@@ -35,6 +35,7 @@ The follow-up readiness pass reran the production build and all local checks, in
 - Arbitrary code transforms, unknown tools and model attempts to omit mandatory approval risks are rejected by code and tests. These are enforced boundaries, not discretionary model instructions.
 - Deployment documentation became stale after the hosted site was configured. The submission pass checked the real deployment and corrected the docs rather than relying on those old claims.
 - A later hosted planner session exhausted its 48-second budget after inspection while waiting on the model. Requests now have a 12-second timeout that also covers response delivery, with bounded recovery for stalled connections and temporary outages. Tests cover key handoff, body timeouts, cancellation, exhausted retries and rate-limit waits that would leave insufficient time for another response. The offline planner is never substituted for a failed model call.
+- Live redraft verification also reproduced Groq's HTTP 429 token limit. The planner now permits one handoff from the default 120b model to the 20b Groq model after available primary keys are exhausted, using the same validated tool and approval boundaries. The actual model and its change audit event are persisted transactionally. Tests cover valid handoff, exhausted allowances and respecting custom-model configuration.
 
 ## Verification
 

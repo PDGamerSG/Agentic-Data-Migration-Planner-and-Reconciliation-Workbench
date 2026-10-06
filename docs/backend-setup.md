@@ -6,14 +6,15 @@ Create one dedicated Neon project and database for this demo. Both the workbench
 
 Store these values in the ignored root `.env` for local operations, and as Vercel environment variables:
 
-| Variable                | Purpose                                                                            |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| `DATABASE_URL`          | Neon pooled PostgreSQL connection string, with SSL required                        |
-| `DIRECT_URL`            | Neon direct connection string for migration commands                               |
-| `GROQ_API_KEY`          | Required for a model-backed hosted demo; omit only for offline development/CI      |
-| `GROQ_API_KEYS`         | Optional extra Groq keys, comma-separated; rate-limited keys hand over to the next |
-| `GROQ_MODEL`            | Optional; defaults to `openai/gpt-oss-120b`                                        |
-| `ALLOW_FAULT_INJECTION` | `true` to demonstrate interruption and retry; otherwise disabled                   |
+| Variable                | Purpose                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`          | Neon pooled PostgreSQL connection string, with SSL required                                              |
+| `DIRECT_URL`            | Neon direct connection string for migration commands                                                     |
+| `GROQ_API_KEY`          | Required for a model-backed hosted demo; omit only for offline development/CI                            |
+| `GROQ_API_KEYS`         | Optional extra Groq keys, comma-separated; rate-limited keys hand over to the next                       |
+| `GROQ_MODEL`            | Optional; defaults to `openai/gpt-oss-120b`                                                              |
+| `GROQ_FALLBACK_MODEL`   | Optional rate-limit handoff; the default primary model uses `openai/gpt-oss-20b`; blank disables handoff |
+| `ALLOW_FAULT_INJECTION` | `true` to demonstrate interruption and retry; otherwise disabled                                         |
 
 Keep these values out of source control and browser-visible environment variables. No `NEXT_PUBLIC_*` secret is needed.
 
@@ -44,6 +45,8 @@ The deployed workbench is open: anyone with the URL can view it and run actions.
 Deploy after database preparation. Open the deployed URL and complete the demo flow. API actions run in Node.js with a 60-second route budget. Agent inspections and model requests share a 48-second budget; a killed execution can be safely retried after its two-minute reservation expires.
 
 Each model request, including response-body delivery, has a 12-second timeout. Stalled connections and temporary provider outages permit up to three attempts with short delays and key rotation. Rate-limit waits are accepted only when they leave time for a complete model response. Caller cancellation and the total session budget stop retries; failures never substitute an offline proposal.
+
+When all keys for the primary model are rate-limited, one handoff to the fallback Groq model is allowed within the same budget. The session's actual model and a model-change audit event are persisted together. The fallback still submits through the same closed tool registry and full plan validation. If both model allowances are exhausted, the session reports the quota failure instead of pretending to succeed. Custom primary models have no implicit fallback unless one is configured.
 
 ## GitHub database workflow
 
