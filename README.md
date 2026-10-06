@@ -85,7 +85,7 @@ Next.js 16, React 19, strict TypeScript, pnpm/Turborepo, Prisma 7 with the Postg
 
 ## Validation
 
-The current revision passed formatting, lint, typecheck, build, **55 unit tests**, **11 PostgreSQL integration tests** and **22 browser tests**, including approval, interruption, retry, reconciliation, rollback, protected demo maintenance, model timeout recovery, mobile layout, dark-theme contrast and request tracking. [GitHub Actions](https://github.com/PDGamerSG/Agentic-Data-Migration-Planner-and-Reconciliation-Workbench/actions) records hosted CI results. Runtime model calls can fail due to provider availability or quotas; browser tests use the offline planner intentionally.
+The current revision passed formatting, lint, typecheck, build, **56 unit tests**, **11 PostgreSQL integration tests** and **22 browser tests**, including approval, interruption, retry, reconciliation, rollback, protected demo maintenance, model timeout recovery, mobile layout, dark-theme contrast and request tracking. [GitHub Actions](https://github.com/PDGamerSG/Agentic-Data-Migration-Planner-and-Reconciliation-Workbench/actions) records hosted CI results. Runtime model calls can fail due to provider availability or quotas; browser tests use the offline planner intentionally.
 
 ```sh
 pnpm format:check

@@ -633,27 +633,14 @@ describe("model tool loop", () => {
             status: 429,
             headers: { "retry-after": "60" },
           });
-        expect(
-          sent.tools.map(
-            (tool: { function: { name: string } }) => tool.function.name,
-          ),
-        ).toEqual(["submit_proposal"]);
+        expect(sent.response_format).toEqual({ type: "json_object" });
+        expect(sent.tools).toBeUndefined();
         return Response.json({
           choices: [
             {
               message: {
                 role: "assistant",
-                content: null,
-                tool_calls: [
-                  {
-                    id: "proposal",
-                    type: "function",
-                    function: {
-                      name: "submit_proposal",
-                      arguments: JSON.stringify(proposal),
-                    },
-                  },
-                ],
+                content: JSON.stringify(proposal),
               },
             },
           ],
@@ -663,6 +650,58 @@ describe("model tool loop", () => {
     expect(models).toEqual(["openai/gpt-oss-120b", "openai/gpt-oss-20b"]);
     expect(changed).toEqual(["openai/gpt-oss-20b"]);
     expect(result.spec).toEqual(proposal.spec);
+  });
+
+  it("validates JSON-mode output and rejects attempts to invoke hidden tools", async () => {
+    const offline = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      onCall: async () => {},
+    });
+    const { measured: _measured, ...proposal } = offline;
+    const calls: { tool: string; rejected: boolean }[] = [];
+    let requests = 0;
+    const result = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      apiKey: "test",
+      model: "openai/gpt-oss-20b",
+      onCall: async (call) => {
+        calls.push(call);
+      },
+      fetcher: async (_url, init) => {
+        const sent = JSON.parse(String(init?.body));
+        expect(sent.response_format).toEqual({ type: "json_object" });
+        expect(sent.tool_choice).toBeUndefined();
+        return Response.json({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: JSON.stringify(
+                  ++requests === 1
+                    ? { name: "execute_migration", arguments: {} }
+                    : proposal,
+                ),
+              },
+            },
+          ],
+        });
+      },
+    });
+    expect(requests).toBe(2);
+    expect(
+      calls
+        .slice(-2)
+        .map((call) => ({ tool: call.tool, rejected: call.rejected })),
+    ).toEqual([
+      { tool: "submit_proposal", rejected: true },
+      { tool: "submit_proposal", rejected: false },
+    ]);
+    expect(result.spec).toEqual(proposal.spec);
+    expect(
+      result.risks.filter((risk) => risk.severity === "high"),
+    ).toHaveLength(3);
   });
 
   it("bounds model handoff and reports rate limits when both models are exhausted", async () => {

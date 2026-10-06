@@ -487,6 +487,7 @@ export async function runAgent(input: {
     ];
     const fetcher = input.fetcher ?? fetch;
     let model = input.model ?? "openai/gpt-oss-120b";
+    let jsonMode = model === "openai/gpt-oss-20b";
     const fallbackModel =
       input.fallbackModel === undefined
         ? model === "openai/gpt-oss-120b"
@@ -520,19 +521,34 @@ export async function runAgent(input: {
                 },
                 body: JSON.stringify({
                   model,
-                  messages,
-                  tools: tools.specs.filter(
-                    (tool) => tool.function.name === "submit_proposal",
-                  ),
-                  tool_choice: validateReturnedCalls
-                    ? "required"
+                  messages: jsonMode
+                    ? [
+                        {
+                          ...messages[0],
+                          content: systemPrompt.replace(
+                            "The tool schema defines each nested field. Respond via tools.",
+                            "Return the submit_proposal arguments object directly as JSON with spec, summary, risks, questions and incompatibilities. Use empty arrays for risks, questions and incompatibilities when there is no additional finding. The application validates the complete proposal.",
+                          ),
+                        },
+                        ...messages.slice(1),
+                      ]
+                    : messages,
+                  ...(jsonMode
+                    ? { response_format: { type: "json_object" } }
                     : {
-                        type: "function",
-                        function: { name: "submit_proposal" },
-                      },
-                  ...(validateReturnedCalls
-                    ? { disable_tool_validation: true }
-                    : {}),
+                        tools: tools.specs.filter(
+                          (tool) => tool.function.name === "submit_proposal",
+                        ),
+                        tool_choice: validateReturnedCalls
+                          ? "required"
+                          : {
+                              type: "function",
+                              function: { name: "submit_proposal" },
+                            },
+                        ...(validateReturnedCalls
+                          ? { disable_tool_validation: true }
+                          : {}),
+                      }),
                   temperature: 0,
                   reasoning_effort: "low",
                   max_completion_tokens: 3000,
@@ -614,6 +630,7 @@ export async function runAgent(input: {
         ) {
           await response.body?.cancel();
           model = fallbackModel;
+          jsonMode = model === "openai/gpt-oss-20b";
           usedFallback = true;
           await input.onModelChange?.(model);
           console.warn(
@@ -710,6 +727,21 @@ export async function runAgent(input: {
       if (!message || message.role !== "assistant")
         throw new Error("Invalid provider response");
       messages.push(message);
+      if (jsonMode && !message.tool_calls?.length) {
+        let args: unknown;
+        try {
+          args = JSON.parse(message.content ?? "");
+        } catch {
+          args = null;
+        }
+        const result = await tools.call("submit_proposal", args);
+        if (!tools.proposal)
+          messages.push({
+            role: "user",
+            content: `Correct these application validation errors and return the complete proposal as JSON: ${JSON.stringify(result).slice(0, 2000)}`,
+          });
+        continue;
+      }
       if (!message.tool_calls?.length) {
         messages.push({
           role: "user",

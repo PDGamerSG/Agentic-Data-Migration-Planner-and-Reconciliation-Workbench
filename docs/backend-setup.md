@@ -48,7 +48,9 @@ Each model request, including response-body delivery, has a 12-second timeout. S
 
 When all keys for the primary model are rate-limited, one handoff to the fallback Groq model is allowed within the same budget. The session's actual model and a model-change audit event are persisted together. The fallback still submits through the same closed tool registry and full plan validation. If both model allowances are exhausted, the session reports the quota failure instead of pretending to succeed. Custom primary models have no implicit fallback unless one is configured.
 
-Groq sometimes returns a generated proposal inside a `tool_use_failed` response. Recognized JSON and `submit_proposal` tool wrappers are passed through the application's complete proposal, catalog and plan validation; valid model proposals can finish without another provider request. Malformed output and hidden tools remain rejected. Invalid proposals receive bounded correction feedback. Generated text is never evaluated as code or copied wholesale into retry prompts.
+Groq sometimes returns a generated proposal inside a `tool_use_failed` response. Recognized JSON and `submit_proposal` tool wrappers are passed through the application's complete proposal, catalog and plan validation; valid model proposals can finish without another provider request. Malformed output and hidden tools remain rejected. Invalid proposals receive bounded correction feedback. Provider-rejected raw generation is never evaluated as code or forwarded wholesale as retry instructions.
+
+The 20b model returns its proposal in JSON response mode to avoid the provider's function-tag parsing failures and reduce request overhead. The application still submits that model output through the same `submit_proposal` validator and tests every mapping. JSON output does not grant additional tools or bypass human approval.
 
 ## GitHub database workflow
 
