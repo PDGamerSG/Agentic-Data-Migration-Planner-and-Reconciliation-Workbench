@@ -461,29 +461,103 @@ export async function runAgent(input: {
     let current = keyCursor++ % keys.length;
     let validateReturnedCalls = false;
     for (let turn = 0; turn < 12 && !tools.proposal; turn++) {
-      const request = () =>
-        fetcher("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${keys[current]}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: input.model ?? "openai/gpt-oss-120b",
-            messages,
-            tools: tools.specs.filter(
-              (tool) => tool.function.name === "submit_proposal",
-            ),
-            tool_choice: validateReturnedCalls
-              ? "required"
-              : { type: "function", function: { name: "submit_proposal" } },
-            ...(validateReturnedCalls ? { disable_tool_validation: true } : {}),
-            temperature: 0,
-            reasoning_effort: "low",
-            max_completion_tokens: 3000,
-          }),
-          signal,
-        });
+      const request = async () => {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          signal.throwIfAborted();
+          const remaining = deadline - Date.now();
+          if (remaining <= 0)
+            throw new Error(
+              "The AI provider exceeded the planning time budget. Try again shortly.",
+            );
+          const requestSignal = AbortSignal.any([
+            signal,
+            AbortSignal.timeout(Math.min(12000, remaining)),
+          ]);
+          try {
+            const response = await fetcher(
+              "https://api.groq.com/openai/v1/chat/completions",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${keys[current]}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: input.model ?? "openai/gpt-oss-120b",
+                  messages,
+                  tools: tools.specs.filter(
+                    (tool) => tool.function.name === "submit_proposal",
+                  ),
+                  tool_choice: validateReturnedCalls
+                    ? "required"
+                    : {
+                        type: "function",
+                        function: { name: "submit_proposal" },
+                      },
+                  ...(validateReturnedCalls
+                    ? { disable_tool_validation: true }
+                    : {}),
+                  temperature: 0,
+                  reasoning_effort: "low",
+                  max_completion_tokens: 3000,
+                }),
+                signal: requestSignal,
+              },
+            );
+            // Include response-body delivery in the attempt timeout. A stalled
+            // connection must leave time for another attempt within the session.
+            const body = await response.text();
+            const buffered = new Response(body || null, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers,
+            });
+            if (
+              ![500, 502, 503, 504].includes(response.status) ||
+              attempt === 2
+            )
+              return buffered;
+            console.warn(
+              JSON.stringify({
+                event: "agent_transport_retry",
+                provider: "groq",
+                attempt: attempt + 1,
+                status: response.status,
+              }),
+            );
+          } catch (error) {
+            // Caller cancellation and the overall budget never trigger retries.
+            signal.throwIfAborted();
+            const timedOut =
+              requestSignal.aborted &&
+              requestSignal.reason?.name === "TimeoutError";
+            const retryable =
+              timedOut ||
+              error instanceof TypeError ||
+              (error instanceof Error && error.name === "TimeoutError");
+            if (!retryable) throw error;
+            if (attempt === 2)
+              throw new Error(
+                "The AI provider did not respond after three attempts. Try again shortly.",
+              );
+            console.warn(
+              JSON.stringify({
+                event: "agent_transport_retry",
+                provider: "groq",
+                attempt: attempt + 1,
+                reason:
+                  timedOut ||
+                  (error instanceof Error && error.name === "TimeoutError")
+                    ? "timeout"
+                    : "connection",
+              }),
+            );
+          }
+          current = (current + 1) % keys.length;
+          await delay(200 * (attempt + 1), undefined, { signal });
+        }
+        throw new Error("The AI provider did not respond.");
+      };
       let response = await request();
       // Hand over to the next key first; wait out retry-after only once every key is limited.
       let tried = 1;
@@ -503,7 +577,7 @@ export async function runAgent(input: {
         if (
           !Number.isFinite(waitMs) ||
           waitMs < 0 ||
-          waitMs > deadline - Date.now() - 2000
+          waitMs > deadline - Date.now() - 12000
         )
           break;
         await response.body?.cancel();

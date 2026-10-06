@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createTools,
   runAgent,
@@ -119,6 +119,192 @@ describe("restricted planner", () => {
 });
 
 describe("model tool loop", () => {
+  it("recovers a timeout while reading the provider response body", async () => {
+    const offline = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      onCall: async () => {},
+    });
+    const { measured: _measured, ...proposal } = offline;
+    const nativeTimeout = AbortSignal.timeout;
+    let attemptTimeouts = 0;
+    const timeout = vi
+      .spyOn(AbortSignal, "timeout")
+      .mockImplementation((ms) => {
+        if (ms !== 12000 || attemptTimeouts++ > 0) return nativeTimeout(ms);
+        const controller = new AbortController();
+        controller.abort(new DOMException("Response stalled", "TimeoutError"));
+        return controller.signal;
+      });
+    let requests = 0;
+    try {
+      const result = await runAgent({
+        records: sampleRecords,
+        answers: {},
+        apiKey: "test",
+        onCall: async () => {},
+        fetcher: async () => {
+          if (++requests === 1) {
+            const response = Response.json({});
+            vi.spyOn(response, "text").mockRejectedValue(
+              new DOMException("Body aborted", "AbortError"),
+            );
+            return response;
+          }
+          return Response.json({
+            choices: [
+              {
+                message: {
+                  role: "assistant",
+                  content: null,
+                  tool_calls: [
+                    {
+                      id: "proposal",
+                      type: "function",
+                      function: {
+                        name: "submit_proposal",
+                        arguments: JSON.stringify(proposal),
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          });
+        },
+      });
+      expect(requests).toBe(2);
+      expect(result.spec).toEqual(proposal.spec);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
+
+  it("does not wait on a rate limit that leaves too little time for another model response", async () => {
+    let requests = 0;
+    await expect(
+      runAgent({
+        records: [],
+        answers: {},
+        apiKey: "test",
+        onCall: async () => {},
+        fetcher: async () => {
+          requests++;
+          return new Response("", {
+            status: 429,
+            headers: { "retry-after": "40" },
+          });
+        },
+      }),
+    ).rejects.toThrow("rate limit reached");
+    expect(requests).toBe(1);
+  });
+
+  it("recovers a stalled provider request on another key within the session budget", async () => {
+    const offline = await runAgent({
+      records: sampleRecords,
+      answers: {},
+      onCall: async () => {},
+    });
+    const { measured: _measured, ...proposal } = offline;
+    const used: string[] = [];
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    try {
+      const result = await runAgent({
+        records: sampleRecords,
+        answers: {},
+        apiKeys: ["key-a", "key-b"],
+        onCall: async () => {},
+        fetcher: async (_url, init) => {
+          used.push(new Headers(init?.headers).get("authorization")!);
+          if (used.length === 1)
+            throw new DOMException("Stalled request", "TimeoutError");
+          return Response.json({
+            choices: [
+              {
+                message: {
+                  role: "assistant",
+                  content: null,
+                  tool_calls: [
+                    {
+                      id: "proposal",
+                      type: "function",
+                      function: {
+                        name: "submit_proposal",
+                        arguments: JSON.stringify(proposal),
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          });
+        },
+      });
+      expect(used).toHaveLength(2);
+      expect(new Set(used)).toEqual(new Set(["Bearer key-a", "Bearer key-b"]));
+      expect(timeout.mock.calls.map(([ms]) => ms)).toEqual([
+        48000, 12000, 12000,
+      ]);
+      expect(result.spec).toEqual(proposal.spec);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
+
+  it("bounds connection retries and preserves caller cancellation", async () => {
+    let requests = 0;
+    await expect(
+      runAgent({
+        records: [],
+        answers: {},
+        apiKey: "test",
+        onCall: async () => {},
+        fetcher: async () => {
+          requests++;
+          throw new TypeError("Connection lost");
+        },
+      }),
+    ).rejects.toThrow("after three attempts");
+    expect(requests).toBe(3);
+    const controller = new AbortController();
+    requests = 0;
+    await expect(
+      runAgent({
+        records: [],
+        answers: {},
+        apiKey: "test",
+        signal: controller.signal,
+        onCall: async () => {},
+        fetcher: async () => {
+          requests++;
+          controller.abort(
+            new DOMException("Cancelled by operator", "AbortError"),
+          );
+          throw controller.signal.reason;
+        },
+      }),
+    ).rejects.toThrow("Cancelled by operator");
+    expect(requests).toBe(1);
+  });
+
+  it("retries a transient provider outage but preserves the final HTTP failure", async () => {
+    let requests = 0;
+    await expect(
+      runAgent({
+        records: [],
+        answers: {},
+        apiKey: "test",
+        onCall: async () => {},
+        fetcher: async () => {
+          requests++;
+          return Response.json({}, { status: 503 });
+        },
+      }),
+    ).rejects.toThrow("HTTP 503");
+    expect(requests).toBe(3);
+  });
+
   it("recovers provider tool-generation rejection without accepting hidden tools", async () => {
     const offline = await runAgent({
       records: sampleRecords,
