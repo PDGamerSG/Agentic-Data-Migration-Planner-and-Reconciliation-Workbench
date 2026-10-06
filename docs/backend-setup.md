@@ -43,11 +43,23 @@ The deployed workbench is open: anyone with the URL can view it and run actions.
 
 Deploy after database preparation. Open the deployed URL and complete the demo flow. API actions run in Node.js with a 60-second route budget. Agent inspections and model requests share a 48-second budget; a killed execution can be safely retried after its two-minute reservation expires.
 
+Each model request, including response-body delivery, has a 12-second timeout. Stalled connections and temporary provider outages permit up to three attempts with short delays and key rotation. Rate-limit waits are accepted only when they leave time for a complete model response. Caller cancellation and the total session budget stop retries; failures never substitute an offline proposal.
+
 ## GitHub database workflow
 
 The `Prepare Neon database` workflow is manually dispatched. Add `DATABASE_URL` and `DIRECT_URL` as secrets in the `production` GitHub environment to use it. It generates Prisma, deploys migrations and seeds only if empty. CI uses its own disposable local PostgreSQL service and never touches Neon.
 
 The Vercel Git integration deploys application changes. Production database migrations remain a separate explicit deployment step.
+
+## Clear demo test history
+
+For an explicitly authorized demo cleanup, connect an administrative shell to the intended database and run:
+
+```sh
+pnpm --filter @manifest/db db:reset-demo --confirm-reset-demo
+```
+
+This removes plans, approvals, runs, planner sessions, tool calls, reconciliations and rollback history. It retains the 250 synthetic source records and the unchanged 20 seeded target customers, and records one reset event. The command refuses a different dataset, active sessions, active runs, migrated target rows or changed baseline customers. Roll back loaded migrations through the application first. The reset and its audit event commit together, and normal immutable-history protections remain enabled. There is no public reset control in the application.
 
 ## Verification
 

@@ -3,6 +3,7 @@ import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, Prisma } from "./generated/prisma/client";
 import { Workbench } from "./workbench";
+import { resetDemoWorkspace } from "./demo-reset";
 import { questionDefinitions, riskDefinitions } from "@manifest/agent";
 config({ path: ".env", quiet: true });
 const url = process.env.TEST_DATABASE_URL;
@@ -268,5 +269,96 @@ describe.skipIf(!db)("Postgres migration lifecycle", () => {
     });
     expect(summary).not.toHaveProperty("result");
     expect((await wb!.getRun(first.id)).startedBy).toBe("History operator");
+  });
+
+  it("refuses to clear history until migration-owned rows are rolled back", async () => {
+    const plan = (await wb!.state()).plans[0]!;
+    const execution = await wb!.execute(plan.id, "Maintenance verifier");
+    try {
+      await expect(resetDemoWorkspace(db!)).rejects.toMatchObject({
+        code: "ROLLBACK_REQUIRED",
+      });
+      expect((await wb!.state()).target.length).toBeGreaterThan(20);
+    } finally {
+      await wb!.rollback(
+        execution.run.lineageId,
+        "Maintenance verifier",
+        "Reset protection verified",
+      );
+    }
+  });
+
+  it("refuses reset during planning and preserves changed baseline customers", async () => {
+    const session = await wb!.createSession(
+      {},
+      undefined,
+      "Maintenance verifier",
+    );
+    await expect(resetDemoWorkspace(db!)).rejects.toMatchObject({
+      code: "BUSY",
+    });
+    await wb!.processSession(session.id);
+    const original = (await wb!.state()).target[0]!;
+    await db!
+      .$executeRaw`UPDATE target.customers SET first_name='Edited baseline' WHERE id=${original.id}`;
+    try {
+      await expect(resetDemoWorkspace(db!)).rejects.toMatchObject({
+        code: "BASELINE_CHANGED",
+      });
+      expect((await wb!.state()).target[0]!.first_name).toBe("Edited baseline");
+    } finally {
+      await db!
+        .$executeRaw`UPDATE target.customers SET first_name=${original.first_name} WHERE id=${original.id}`;
+    }
+  });
+
+  it("rolls back reset and restores history protection when its audit write fails", async () => {
+    const before = await wb!.state();
+    await db!.$executeRawUnsafe(
+      "CREATE FUNCTION fail_reset_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.type = 'demo_workspace_reset' THEN RAISE EXCEPTION 'Injected audit failure'; END IF; RETURN NEW; END; $$",
+    );
+    await db!.$executeRawUnsafe(
+      'CREATE TRIGGER fail_reset_audit BEFORE INSERT ON "AuditEvent" FOR EACH ROW EXECUTE FUNCTION fail_reset_audit()',
+    );
+    try {
+      await expect(resetDemoWorkspace(db!)).rejects.toThrow(
+        "Injected audit failure",
+      );
+      const after = await wb!.state();
+      expect(after.plans).toEqual(before.plans);
+      expect(after.runs).toEqual(before.runs);
+      expect(after.history).toEqual(before.history);
+      await expect(db!.$executeRaw`TRUNCATE "AuditEvent"`).rejects.toThrow(
+        "append-only",
+      );
+    } finally {
+      await db!.$executeRawUnsafe(
+        'DROP TRIGGER fail_reset_audit ON "AuditEvent"',
+      );
+      await db!.$executeRawUnsafe("DROP FUNCTION fail_reset_audit()");
+    }
+  });
+
+  it("clears demo test evidence atomically while retaining fixtures and audit protection", async () => {
+    const before = await wb!.state();
+    const operationId = crypto.randomUUID();
+    const result = await resetDemoWorkspace(db!, operationId);
+    const after = await wb!.state();
+    expect(result.removed.plans).toBe(before.plans.length);
+    expect(after.plans).toEqual([]);
+    expect(after.runs).toEqual([]);
+    expect(after.sessions).toEqual([]);
+    expect(after.reconciliations).toEqual([]);
+    expect(after.rollbacks).toEqual([]);
+    expect(after.dataset).toEqual(before.dataset);
+    expect(after.target).toEqual(before.target);
+    expect(after.history).toHaveLength(1);
+    expect(after.history[0]!.type).toBe("demo_workspace_reset");
+    await expect(resetDemoWorkspace(db!, operationId)).rejects.toMatchObject({
+      code: "ALREADY_RESET",
+    });
+    await expect(db!.$executeRaw`TRUNCATE "AuditEvent"`).rejects.toThrow(
+      "append-only",
+    );
   });
 });
