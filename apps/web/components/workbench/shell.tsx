@@ -13,7 +13,6 @@ import {
   Sun,
   Table2,
   Layers3,
-  ShieldCheck,
 } from "lucide-react";
 
 export const navigation = [
@@ -126,17 +125,6 @@ export function Rail({ view }: { view: string }) {
           </div>
         ))}
       </nav>
-      <div className="rail-foot">
-        <ShieldCheck size={18} aria-hidden="true" />
-        <div>
-          <strong>Bounded by design</strong>
-          <p>
-            One source · one target
-            <br />
-            Up to 1,000 records
-          </p>
-        </div>
-      </div>
     </aside>
   );
 }
