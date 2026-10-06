@@ -22,7 +22,7 @@ Do not supply real customer information, database credentials or production secr
 
 ## Verification
 
-On October 6, 2026, local verification passed formatting, lint, typechecking, 52 unit tests, 11 PostgreSQL integration tests, the production build and 21 browser tests. The integration and browser suites used the dedicated local `manifest_test` database with the offline planner, including interruption, retry, reconciliation, rollback and protected demo maintenance. The hosted overview and persisted Groq planning evidence were inspected separately.
+On October 6, 2026, local verification passed formatting, lint, typechecking, 55 unit tests, 11 PostgreSQL integration tests, the production build and 22 browser tests. The integration and browser suites used the dedicated local `manifest_test` database with the offline planner, including interruption, retry, reconciliation, rollback and protected demo maintenance. The hosted overview and persisted Groq planning evidence were inspected separately.
 
 ## Suggested access remarks
 

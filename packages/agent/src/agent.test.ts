@@ -119,6 +119,81 @@ describe("restricted planner", () => {
 });
 
 describe("model tool loop", () => {
+  it.each(["tagged", "json"])(
+    "validates a provider-rejected %s proposal without another model call",
+    async (format) => {
+      const offline = await runAgent({
+        records: sampleRecords,
+        answers: {},
+        onCall: async () => {},
+      });
+      const { measured: _measured, ...proposal } = offline;
+      const generation =
+        format === "tagged"
+          ? `<function=submit_proposal>${JSON.stringify(proposal)}</function>`
+          : JSON.stringify({ name: "submit_proposal", arguments: proposal });
+      let requests = 0;
+      const accepted: string[] = [];
+      const result = await runAgent({
+        records: sampleRecords,
+        answers: {},
+        apiKey: "test",
+        onCall: async (call) => {
+          if (call.tool === "submit_proposal" && !call.rejected)
+            accepted.push(call.tool);
+        },
+        fetcher: async () => {
+          requests++;
+          return Response.json(
+            {
+              error: { code: "tool_use_failed", failed_generation: generation },
+            },
+            { status: 400 },
+          );
+        },
+      });
+      expect(requests).toBe(1);
+      expect(accepted).toEqual(["submit_proposal"]);
+      expect(result.spec).toEqual(proposal.spec);
+      expect(result.measured.email!.total).toBe(250);
+    },
+  );
+
+  it("rejects invalid provider-rejected proposals and never invokes hidden tools", async () => {
+    const calls: { tool: string; rejected: boolean }[] = [];
+    const attempts = [
+      JSON.stringify({ name: "execute_migration", arguments: {} }),
+      '<function=submit_proposal>{"spec":{"mappings":[]}}</function>',
+    ];
+    let requests = 0;
+    await expect(
+      runAgent({
+        records: sampleRecords,
+        answers: {},
+        apiKey: "test",
+        onCall: async (call) => {
+          calls.push(call);
+        },
+        fetcher: async () =>
+          Response.json(
+            {
+              error: {
+                code: "tool_use_failed",
+                failed_generation: attempts[requests++],
+              },
+            },
+            { status: 400 },
+          ),
+      }),
+    ).rejects.toThrow("HTTP 400 (tool_use_failed)");
+    expect(requests).toBe(2);
+    expect(calls.some((call) => call.tool === "execute_migration")).toBe(false);
+    expect(calls.at(-1)).toMatchObject({
+      tool: "submit_proposal",
+      rejected: true,
+    });
+  });
+
   it("recovers a timeout while reading the provider response body", async () => {
     const offline = await runAgent({
       records: sampleRecords,

@@ -48,6 +48,8 @@ Each model request, including response-body delivery, has a 12-second timeout. S
 
 When all keys for the primary model are rate-limited, one handoff to the fallback Groq model is allowed within the same budget. The session's actual model and a model-change audit event are persisted together. The fallback still submits through the same closed tool registry and full plan validation. If both model allowances are exhausted, the session reports the quota failure instead of pretending to succeed. Custom primary models have no implicit fallback unless one is configured.
 
+Groq sometimes returns a generated proposal inside a `tool_use_failed` response. Recognized JSON and `submit_proposal` tool wrappers are passed through the application's complete proposal, catalog and plan validation; valid model proposals can finish without another provider request. Malformed output and hidden tools remain rejected. Invalid proposals receive bounded correction feedback. Generated text is never evaluated as code or copied wholesale into retry prompts.
+
 ## GitHub database workflow
 
 The `Prepare Neon database` workflow is manually dispatched. Add `DATABASE_URL` and `DIRECT_URL` as secrets in the `production` GitHub environment to use it. It generates Prisma, deploys migrations and seeds only if empty. CI uses its own disposable local PostgreSQL service and never touches Neon.

@@ -351,6 +351,31 @@ type Message = {
 /** Rotates the starting key between sessions so free-tier quotas share the load. */
 let keyCursor = 0;
 
+/** Provider-rejected generation is untrusted JSON, never executable code. */
+function recoveredProposal(generation: unknown): unknown | null {
+  if (typeof generation !== "string" || generation.length > 32000) return null;
+  let encoded = generation.trim();
+  const tagged =
+    encoded.match(/^<function=submit_proposal>([\s\S]*)<\/function>$/) ??
+    encoded.match(/^<tool_call>([\s\S]*)<\/tool_call>$/);
+  if (tagged) encoded = tagged[1]!.trim();
+  try {
+    const value = JSON.parse(encoded);
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      return null;
+    if (Object.hasOwn(value, "spec")) return value;
+    const call =
+      Array.isArray(value.tool_calls) && value.tool_calls.length === 1
+        ? value.tool_calls[0]?.function
+        : value;
+    if (!call || call.name !== "submit_proposal") return null;
+    const args = call.arguments ?? call.parameters;
+    return typeof args === "string" ? JSON.parse(args) : (args ?? null);
+  } catch {
+    return null;
+  }
+}
+
 export async function runAgent(input: {
   records: SourceRecord[];
   answers: Record<string, string>;
@@ -621,8 +646,26 @@ export async function runAgent(input: {
       }
       if (response.status === 400) {
         const rejected = (await response.json().catch(() => null)) as {
-          error?: { code?: unknown };
+          error?: { code?: unknown; failed_generation?: unknown };
         } | null;
+        let correction = "";
+        if (rejected?.error?.code === "tool_use_failed") {
+          const candidate = recoveredProposal(rejected.error.failed_generation);
+          if (candidate !== null) {
+            const result = await tools.call("submit_proposal", candidate);
+            if (tools.proposal) {
+              console.warn(
+                JSON.stringify({
+                  event: "agent_provider_generation_recovered",
+                  provider: "groq",
+                  model,
+                }),
+              );
+              break;
+            }
+            correction = ` Application validation errors: ${JSON.stringify(result).slice(0, 2000)}`;
+          }
+        }
         // Groq can reject generated tool syntax before our validator sees it.
         // Permit one provider-validation handoff; every returned call is still
         // checked locally, and only submit_proposal is available to the model.
@@ -642,7 +685,8 @@ export async function runAgent(input: {
           messages.push({
             role: "user",
             content:
-              "The provider rejected the tool generation. Call only submit_proposal using JSON arguments matching its schema; the application will validate your proposal and return specific corrections.",
+              "The provider rejected the tool generation. Call only submit_proposal using JSON arguments matching its schema; the application will validate your proposal and return specific corrections." +
+              correction,
           });
           continue;
         }
