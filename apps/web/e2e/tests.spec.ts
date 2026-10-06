@@ -2,6 +2,46 @@ import { test, expect } from "@playwright/test";
 import { questionDefinitions } from "@manifest/agent";
 import type { WorkbenchState } from "@manifest/db";
 
+test("shows the actual model used by the selected plan's session", async ({
+  page,
+  request,
+}) => {
+  const base: WorkbenchState = await (await request.get("/api/state")).json();
+  const models = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
+  const sessions = models.map((model, i) => ({
+    ...base.sessions[0]!,
+    id: `model-session-${i}`,
+    provider: "groq",
+    model,
+    status: "succeeded",
+    calls: [],
+  }));
+  const plans = sessions.map((session, i) => ({
+    ...base.plans[0]!,
+    id: `00000000-0000-4000-8000-00000000002${i}`,
+    version: i + 1,
+    agentSessionId: session.id,
+  }));
+  await page.route("**/api/state", (route) =>
+    route.fulfill({
+      json: {
+        ...base,
+        provider: "groq",
+        plans: [...plans].reverse(),
+        sessions: [...sessions].reverse(),
+      },
+    }),
+  );
+  await page.goto(`/agent/${plans[1]!.id}`);
+  await expect(
+    page.getByText("Groq · gpt-oss-20b", { exact: true }),
+  ).toBeVisible();
+  await page.goto(`/agent/${plans[0]!.id}`);
+  await expect(
+    page.getByText("Groq · gpt-oss-120b", { exact: true }),
+  ).toBeVisible();
+});
+
 test("finds personal and shared tests and reopens an older question set", async ({
   page,
   request,

@@ -11,6 +11,13 @@ export function Agent() {
   const session = plan
     ? state.sessions.find((s) => s.id === plan.agentSessionId)
     : state.sessions[0];
+  const modelLabel = session
+    ? session.provider === "groq"
+      ? `Groq · ${session.model.replace(/^openai\//, "")}`
+      : "Offline planner"
+    : state.provider === "groq"
+      ? "Groq planner"
+      : "Offline planner";
   const answered = plan
     ? plan.proposal.questions.filter((q) => answers[q.id]).length
     : 0;
@@ -32,11 +39,7 @@ export function Agent() {
       )}
       <div className="form-grid three standalone">
         <Box label="AI model">
-          <span className="value-strong">
-            {state.provider === "groq"
-              ? "Groq · gpt-oss-120b"
-              : "Offline planner"}
-          </span>
+          <span className="value-strong">{modelLabel}</span>
           <small>Reads and tests data. Cannot change anything.</small>
         </Box>
         <Box label="This plan’s AI checks">

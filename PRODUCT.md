@@ -26,7 +26,7 @@ The agent proposes and a human signs. The agent can only inspect and test throug
 - Single-operator web workbench. The operator types their name into the bottom control bar, and that name is recorded on approvals, runs and rollbacks.
 - The deployed instance is open; there is no sign-in.
 - Data lives in Neon Postgres. The `public` schema holds the workbench and `target` is the mock destination.
-- The hosted planner is Groq (`openai/gpt-oss-120b`). Local development and CI use the deterministic offline planner when no model key is configured; failed model calls remain failed sessions rather than silently falling back.
+- The hosted planner is Groq (`openai/gpt-oss-120b`), with one handoff to `openai/gpt-oss-20b` when the primary model is rate-limited. Local development and CI use the deterministic offline planner when no model key is configured; failed model calls remain failed sessions rather than silently substituting an offline proposal.
 - Interrupting an execution is a demo feature (`ALLOW_FAULT_INJECTION`). It stops the load after a committed batch so the operator can show a retry that skips the rows already loaded.
 
 ## Capabilities and Constraints
